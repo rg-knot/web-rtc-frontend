@@ -6,7 +6,10 @@ const remoteVideo = document.getElementById("remoteVideo");
 const endCallBtn = document.getElementById("end-call-btn");
 
 // IMPORTANT: CONNECT TO REMOTE NESTJS SERVER
-const socket = io("http://34.131.190.182:3000");
+const socket = io("http://34.131.190.182:3000", {
+    transports: ["websocket"]
+  });
+  
 
 let localStream;
 let caller = [];
