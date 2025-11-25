@@ -57,7 +57,7 @@ const PeerConnection = (function(){
 
 // Join user
 createUserBtn.addEventListener("click", () => {
-    console.log("Emitting join-user for:", username.value);
+    console.log("Emitting join-user for:", username.value, "  -> ", socket.id);
     if(username.value !== "") {
         const box = document.querySelector(".username-input");
         socket.emit("join-user", username.value);
@@ -120,6 +120,15 @@ socket.on("icecandidate", async ({ candidate }) => {
 
 // End call
 socket.on("call-ended", () => endCall());
+
+
+socket.on("connect", () => {
+    console.log("Socket connected with id:", socket.id);
+});
+
+socket.on("connect_error", (err) => {
+    console.log("Socket connection error:", err);
+});
 
 // Initiate call
 const startCall = async (user) => {
