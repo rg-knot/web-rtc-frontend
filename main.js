@@ -6,10 +6,23 @@ const remoteVideo = document.getElementById("remoteVideo");
 const endCallBtn = document.getElementById("end-call-btn");
 
 // IMPORTANT: CONNECT TO REMOTE NESTJS SERVER
-const socket = io("https://34.102.240.255", {
-    transports: ["websocket", "polling"], // always include polling first
-  });
+// const socket = io("http://34.131.190.182:3000", {
+//     transports: ["websocket", "polling"], // always include polling first
+//   });
   
+//   const socket = io("https://34.102.240.255:3000", {
+//     transports: ["websocket", "polling"], // always include polling first
+//   });
+
+//   const socket = io("https://webrtc-test.knot.dating", {
+//     transports: ["websocket", "polling"], // always include polling first
+//   });
+
+  const socket = io("https://webrtc-test.knot.dating", {
+    transports: ["websocket", "polling"]
+});
+
+
   
 
 let localStream;
