@@ -35,9 +35,17 @@ const PeerConnection = (function(){
     const createPeerConnection = () => {
         const config = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' }
+              // Public STUN
+              { urls: 'stun:stun.l.google.com:19302' },
+          
+              // Your TURN server
+              {
+                urls: 'turn:34.131.190.182:3478',
+                username: 'webrtc_user',
+                credential: 'webrtc_pass'
+              }
             ]
-        };
+          };
 
         peerConnection = new RTCPeerConnection(config);
 
