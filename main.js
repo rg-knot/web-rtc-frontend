@@ -23,8 +23,6 @@ const endCallBtn = document.getElementById("end-call-btn");
 });
 
 
-  
-
 let localStream;
 let caller = [];
 
@@ -33,6 +31,12 @@ const PeerConnection = (function(){
     let peerConnection;
 
     const createPeerConnection = () => {
+        // const config = {
+        //     iceServers: [
+        //         { urls: 'stun:stun.l.google.com:19302' },
+        //     ]
+        // };
+
         const config = {
             iceServers: [
               // Public STUN
