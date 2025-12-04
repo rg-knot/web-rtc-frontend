@@ -23,7 +23,7 @@ const endCallBtn = document.getElementById("end-call-btn");
 });
 
 
-let localStream;
+let localStream
 let caller = [];
 
 // Peer connection wrapper
