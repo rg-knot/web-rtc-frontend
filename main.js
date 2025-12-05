@@ -177,7 +177,6 @@ const endCall = () => {
     }
 };
 
-// let localStream;
 let audioRecorder;
 
 // =========================
@@ -185,45 +184,60 @@ let audioRecorder;
 // =========================
 function startAudioStreaming(stream) {
     try {
-        audioRecorder = new MediaRecorder(stream, {
-            mimeType: "audio/webm;codecs=opus"
-        });
+        // ✔ pick safest mimeType available
+        let mimeType =
+            MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+                ? "audio/webm;codecs=opus"
+                : MediaRecorder.isTypeSupported("audio/webm")
+                ? "audio/webm"
+                : "";
 
-        // Event: chunk available
+        if (!mimeType) {
+            console.error("No supported MIME type for MediaRecorder!");
+            return;
+        }
+
+        // ✔ ensure an audio track exists
+        if (!stream.getAudioTracks().length) {
+            console.error("No audio track found in stream!");
+            return;
+        }
+
+        audioRecorder = new MediaRecorder(stream, { mimeType });
+
         audioRecorder.ondataavailable = (event) => {
             if (event.data && event.data.size > 0) {
-                // Convert Blob -> ArrayBuffer so backend can read raw bytes
-                event.data.arrayBuffer().then(buffer => {
+                event.data.arrayBuffer().then((buffer) => {
                     socket.emit("audio-chunk", buffer);
                 });
             }
         };
 
-        // Send chunk every 200ms
-        audioRecorder.start(200);
-        console.log("Audio streaming started...");
+        audioRecorder.start(200); // send 200ms audio
+        console.log("Audio streaming started with:", mimeType);
+
     } catch (err) {
         console.error("Audio streaming error:", err);
     }
 }
 
 // =========================
-//  START CAMERA + AUDIO
+//  START CAM + MIC
 // =========================
 async function startMyVideo() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({
             audio: true,
-            video: true
+            video: true,
         });
 
         localVideo.srcObject = localStream;
 
-        // Start audio stream to backend
+        // start streaming audio to backend
         startAudioStreaming(localStream);
 
     } catch (err) {
-        console.error("Camera error:", err);
+        console.error("Camera/Mic error:", err);
     }
 }
 
