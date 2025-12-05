@@ -184,42 +184,36 @@ let audioRecorder;
 // =========================
 function startAudioStreaming(stream) {
     try {
-        // ✔ pick safest mimeType available
-        let mimeType =
-            MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-                ? "audio/webm;codecs=opus"
-                : MediaRecorder.isTypeSupported("audio/webm")
-                ? "audio/webm"
-                : "";
+        audioContext = new AudioContext({ sampleRate: 16000 });
 
-        if (!mimeType) {
-            console.error("No supported MIME type for MediaRecorder!");
-            return;
-        }
+        const source = audioContext.createMediaStreamSource(stream);
 
-        // ✔ ensure an audio track exists
-        if (!stream.getAudioTracks().length) {
-            console.error("No audio track found in stream!");
-            return;
-        }
+        processor = audioContext.createScriptProcessor(4096, 1, 1);
 
-        audioRecorder = new MediaRecorder(stream, { mimeType });
-
-        audioRecorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) {
-                event.data.arrayBuffer().then((buffer) => {
-                    socket.emit("audio-chunk", buffer);
-                });
-            }
+        processor.onaudioprocess = (e) => {
+            const input = e.inputBuffer.getChannelData(0);
+            const pcm16 = convertFloatToInt16(input);
+            socket.emit("audio-chunk", pcm16);
         };
 
-        audioRecorder.start(200); // send 200ms audio
-        console.log("Audio streaming started with:", mimeType);
+        source.connect(processor);
+        processor.connect(audioContext.destination);
 
+        console.log("Audio streaming started using Web Audio API");
     } catch (err) {
         console.error("Audio streaming error:", err);
     }
 }
+
+function convertFloatToInt16(float32Array) {
+    let int16Array = new Int16Array(float32Array.length);
+    for (let i = 0; i < float32Array.length; i++) {
+        let s = Math.max(-1, Math.min(1, float32Array[i]));
+        int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return int16Array;
+}
+
 
 // =========================
 //  START CAM + MIC
@@ -233,12 +227,13 @@ async function startMyVideo() {
 
         localVideo.srcObject = localStream;
 
-        // start streaming audio to backend
+        // start audio streaming
         startAudioStreaming(localStream);
 
     } catch (err) {
         console.error("Camera/Mic error:", err);
     }
 }
+
 
 startMyVideo();
