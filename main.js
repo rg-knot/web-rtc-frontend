@@ -177,14 +177,54 @@ const endCall = () => {
     }
 };
 
-// Start local video
-const startMyVideo = async () => {
+// let localStream;
+let audioRecorder;
+
+// =========================
+//  START AUDIO STREAMING
+// =========================
+function startAudioStreaming(stream) {
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        localVideo.srcObject = localStream;
+        audioRecorder = new MediaRecorder(stream, {
+            mimeType: "audio/webm;codecs=opus"
+        });
+
+        // Event: chunk available
+        audioRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                // Convert Blob -> ArrayBuffer so backend can read raw bytes
+                event.data.arrayBuffer().then(buffer => {
+                    socket.emit("audio-chunk", buffer);
+                });
+            }
+        };
+
+        // Send chunk every 200ms
+        audioRecorder.start(200);
+        console.log("Audio streaming started...");
     } catch (err) {
-        console.error("Camera error: ", err);
+        console.error("Audio streaming error:", err);
     }
-};
+}
+
+// =========================
+//  START CAMERA + AUDIO
+// =========================
+async function startMyVideo() {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        });
+
+        localVideo.srcObject = localStream;
+
+        // Start audio stream to backend
+        startAudioStreaming(localStream);
+
+    } catch (err) {
+        console.error("Camera error:", err);
+    }
+}
 
 startMyVideo();
