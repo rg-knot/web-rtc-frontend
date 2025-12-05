@@ -182,37 +182,82 @@ let audioRecorder;
 // =========================
 //  START AUDIO STREAMING
 // =========================
-function startAudioStreaming(stream) {
+// function startAudioStreaming(stream) {
+//     try {
+//         audioContext = new AudioContext({ sampleRate: 16000 });
+
+//         const source = audioContext.createMediaStreamSource(stream);
+
+//         processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+//         processor.onaudioprocess = (e) => {
+//             const input = e.inputBuffer.getChannelData(0);
+//             const pcm16 = convertFloatToInt16(input);
+//             socket.emit("audio-chunk", pcm16);
+//         };
+
+//         source.connect(processor);
+//         processor.connect(audioContext.destination);
+
+//         console.log("Audio streaming started using Web Audio API");
+//     } catch (err) {
+//         console.error("Audio streaming error:", err);
+//     }
+// }
+
+// function convertFloatToInt16(float32Array) {
+//     let int16Array = new Int16Array(float32Array.length);
+//     for (let i = 0; i < float32Array.length; i++) {
+//         let s = Math.max(-1, Math.min(1, float32Array[i]));
+//         int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+//     }
+//     return int16Array;
+// }
+
+async function startAudioStreaming(stream) {
     try {
-        audioContext = new AudioContext({ sampleRate: 16000 });
+        const audioContext = new AudioContext({
+            sampleRate: 48000   // Ideal for transcription (Whisper, Google STT)
+        });
+
+        // Load audio worklet script
+        await audioContext.audioWorklet.addModule("/audio-processor.js");
 
         const source = audioContext.createMediaStreamSource(stream);
 
-        processor = audioContext.createScriptProcessor(4096, 1, 1);
+        const workletNode = new AudioWorkletNode(audioContext, "audio-processor");
 
-        processor.onaudioprocess = (e) => {
-            const input = e.inputBuffer.getChannelData(0);
-            const pcm16 = convertFloatToInt16(input);
-            socket.emit("audio-chunk", pcm16);
+        // Receive raw PCM float32 audio
+        workletNode.port.onmessage = (event) => {
+            const float32Data = event.data;
+
+            // Convert Float32Array → Int16Array (smaller size)
+            const int16Data = floatTo16BitPCM(float32Data);
+
+            // Send PCM chunk to backend
+            socket.emit("audio-chunk", int16Data);
         };
 
-        source.connect(processor);
-        processor.connect(audioContext.destination);
+        // Connect
+        source.connect(workletNode).connect(audioContext.destination);
 
-        console.log("Audio streaming started using Web Audio API");
-    } catch (err) {
-        console.error("Audio streaming error:", err);
+        console.log("Audio streaming started using AudioWorkletNode");
+
+    } catch (error) {
+        console.error("Audio Worklet error:", error);
     }
 }
 
-function convertFloatToInt16(float32Array) {
-    let int16Array = new Int16Array(float32Array.length);
+// Convert Float32 → 16-bit PCM before sending
+function floatTo16BitPCM(float32Array) {
+    let buffer = new Int16Array(float32Array.length);
     for (let i = 0; i < float32Array.length; i++) {
         let s = Math.max(-1, Math.min(1, float32Array[i]));
-        int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
     }
-    return int16Array;
+    return buffer;
 }
+
 
 
 // =========================
