@@ -27,58 +27,52 @@ let localStream
 let caller = [];
 
 // Peer connection wrapper
-const PeerConnection = (function(){
-    let peerConnection;
+const PeerConnection = (function () {
+    let peerConnection = null;
 
     const createPeerConnection = () => {
-        // const config = {
-        //     iceServers: [
-        //         { urls: 'stun:stun.l.google.com:19302' },
-        //     ]
-        // };
-
         const config = {
             iceServers: [
-              // Public STUN
-              { urls: 'stun:stun.l.google.com:19302' },
-          
-              // Your TURN server
-              {
-                urls: 'turn:34.131.190.182:3478',
-                username: 'webrtc_user',
-                credential: 'webrtc_pass'
-              }
+                { urls: "stun:stun.l.google.com:19302" },
+                {
+                    urls: "turn:34.131.190.182:3478",
+                    username: "webrtc_user",
+                    credential: "webrtc_pass"
+                }
             ]
-          };
+        };
 
-        peerConnection = new RTCPeerConnection(config);
+        const pc = new RTCPeerConnection(config);
 
-        localStream.getTracks().forEach(track => {
-            peerConnection.addTrack(track, localStream);
-        });
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
-        peerConnection.ontrack = function(event) {
+        pc.ontrack = (event) => {
             remoteVideo.srcObject = event.streams[0];
         };
 
-        peerConnection.onicecandidate = function(event) {
-            if(event.candidate) {
-                socket.emit("icecandidate", { candidate: event.candidate, by: username.value });
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit("icecandidate", {
+                    candidate: event.candidate,
+                    by: username.value
+                });
             }
         };
 
-        return peerConnection;
+        return pc;
     };
 
     return {
         getInstance: () => {
-            if(!peerConnection) {
-                peerConnection = createPeerConnection();
-            }
+            if (!peerConnection) peerConnection = createPeerConnection();
             return peerConnection;
+        },
+        reset: () => {
+            peerConnection = null;
         }
     };
 })();
+
 
 // Join user
 createUserBtn.addEventListener("click", () => {
@@ -114,6 +108,12 @@ socket.on("joined", allusers => {
         allusersHtml.appendChild(li);
     }
 });
+
+endCallBtn.addEventListener("click", () => {
+    socket.emit("end-call", caller);   // notify backend
+    endCall();
+});
+
 
 // Offer received
 socket.on("offer", async ({ from, to, offer }) => {
@@ -169,13 +169,30 @@ const startCall = async (user) => {
 };
 
 // End call
+// const endCall = () => {
+//     const pc = PeerConnection.getInstance();
+//     if(pc) {
+//         pc.close();
+//         endCallBtn.style.display = 'none';
+//     }
+// };
 const endCall = () => {
     const pc = PeerConnection.getInstance();
-    if(pc) {
+
+    if (pc) {
         pc.close();
-        endCallBtn.style.display = 'none';
     }
+
+    PeerConnection.reset();
+
+    remoteVideo.srcObject = null;
+
+    endCallBtn.style.display = "none";
+
+    console.log("Call ended and peer connection reset.");
 };
+
+
 
 let audioRecorder;
 
