@@ -209,21 +209,21 @@ const startCall = async (user) => {
 //         endCallBtn.style.display = 'none';
 //     }
 // };
-const endCall = () => {
-    const pc = PeerConnection.getInstance();
+// const endCall = () => {
+//     const pc = PeerConnection.getInstance();
 
-    if (pc) {
-        pc.close();
-    }
+//     if (pc) {
+//         pc.close();
+//     }
 
-    PeerConnection.reset();
+//     PeerConnection.reset();
 
-    remoteVideo.srcObject = null;
+//     remoteVideo.srcObject = null;
 
-    endCallBtn.style.display = "none";
+//     endCallBtn.style.display = "none";
 
-    console.log("Call ended and peer connection reset.");
-};
+//     console.log("Call ended and peer connection reset.");
+// };
 
 
 function endCall() {
