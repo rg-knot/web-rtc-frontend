@@ -144,7 +144,40 @@ socket.on("icecandidate", async ({ candidate }) => {
 });
 
 // End call
-socket.on("call-ended", () => endCall());
+socket.on("call-ended", () => {
+    console.log("Other user ended call");
+  
+    // Same cleanup
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
+    }
+  
+    localStream?.getTracks().forEach(t => t.stop());
+    remoteVideo.srcObject = null;
+    localVideo.srcObject = null;
+  
+    hideCallUI();
+  });
+
+  function showCallUI() {
+    const endBtn = document.getElementById("end-call-btn");
+    endBtn.style.display = "block";
+}
+
+function hideCallUI() {
+    const endBtn = document.getElementById("end-call-btn");
+    endBtn.style.display = "none";
+
+    // Stop showing videos
+    const remoteVideo = document.getElementById("remoteVideo");
+    const localVideo = document.getElementById("localVideo");
+
+    remoteVideo.srcObject = null;
+    localVideo.srcObject = null;
+}
+
+  
 
 
 socket.on("connect", () => {
@@ -192,6 +225,28 @@ const endCall = () => {
     console.log("Call ended and peer connection reset.");
 };
 
+
+function endCall() {
+    // Inform other peer
+    socket.emit("call-ended", { to: otherUserId });
+  
+    // Stop local camera/audio tracks
+    localStream.getTracks().forEach(t => t.stop());
+  
+    // Remove video
+    remoteVideo.srcObject = null;
+    localVideo.srcObject = null;
+  
+    // Close RTCPeerConnection
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
+    }
+  
+    // Hide call UI
+    hideCallUI();
+  }
+  
 
 
 let audioRecorder;
