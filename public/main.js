@@ -25,6 +25,9 @@ const endCallBtn = document.getElementById("end-call-btn");
 
 let localStream
 let caller = [];
+let peerConnection = null;  // override wrapper confusion
+let currentCallUser = null; // who you are talking to
+
 
 // Peer connection wrapper
 const PeerConnection = (function () {
@@ -109,33 +112,61 @@ socket.on("joined", allusers => {
     }
 });
 
+// endCallBtn.addEventListener("click", () => {
+//     socket.emit("end-call", caller);   // notify backend
+//     endCall();
+// });
 endCallBtn.addEventListener("click", () => {
-    socket.emit("end-call", caller);   // notify backend
+    if (currentCallUser) {
+        socket.emit("end-call", { to: currentCallUser });
+    }
     endCall();
 });
 
 
+
 // Offer received
+// socket.on("offer", async ({ from, to, offer }) => {
+//     const pc = PeerConnection.getInstance();
+//     await pc.setRemoteDescription(offer);
+
+//     const answer = await pc.createAnswer();
+//     await pc.setLocalDescription(answer);
+
+//     socket.emit("answer", { from, to, answer: pc.localDescription });
+
+//     caller = [from, to];
+// });
 socket.on("offer", async ({ from, to, offer }) => {
     const pc = PeerConnection.getInstance();
+    currentCallUser = from;
+
     await pc.setRemoteDescription(offer);
 
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
     socket.emit("answer", { from, to, answer: pc.localDescription });
-
-    caller = [from, to];
+    showCallUI();
 });
 
+
 // Answer received
+// socket.on("answer", async ({ from, to, answer }) => {
+//     const pc = PeerConnection.getInstance();
+//     await pc.setRemoteDescription(answer);
+
+//     endCallBtn.style.display = "block";
+//     caller = [from, to];
+// });
+
 socket.on("answer", async ({ from, to, answer }) => {
     const pc = PeerConnection.getInstance();
     await pc.setRemoteDescription(answer);
 
-    endCallBtn.style.display = "block";
-    caller = [from, to];
+    showCallUI();
 });
+
 
 // ICE candidate
 socket.on("icecandidate", async ({ candidate }) => {
@@ -191,6 +222,7 @@ socket.on("connect_error", (err) => {
 // Initiate call
 const startCall = async (user) => {
     const pc = PeerConnection.getInstance();
+    currentCallUser = user;   // store who we are calling
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
@@ -226,26 +258,49 @@ const startCall = async (user) => {
 // };
 
 
+// function endCall() {
+//     // Inform other peer
+//     socket.emit("call-ended", { to: otherUserId });
+  
+//     // Stop local camera/audio tracks
+//     localStream.getTracks().forEach(t => t.stop());
+  
+//     // Remove video
+//     remoteVideo.srcObject = null;
+//     localVideo.srcObject = null;
+  
+//     // Close RTCPeerConnection
+//     if (peerConnection) {
+//       peerConnection.close();
+//       peerConnection = null;
+//     }
+  
+//     // Hide call UI
+//     hideCallUI();
+//   }
+
 function endCall() {
-    // Inform other peer
-    socket.emit("call-ended", { to: otherUserId });
-  
-    // Stop local camera/audio tracks
-    localStream.getTracks().forEach(t => t.stop());
-  
-    // Remove video
+    console.log("Ending call...");
+
+    // Stop local camera & mic
+    if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+    }
+
+    // Clear video
     remoteVideo.srcObject = null;
     localVideo.srcObject = null;
-  
-    // Close RTCPeerConnection
-    if (peerConnection) {
-      peerConnection.close();
-      peerConnection = null;
-    }
-  
-    // Hide call UI
+
+    // Close peer connection
+    const pc = PeerConnection.getInstance();
+    if (pc) pc.close();
+
+    PeerConnection.reset();
+    currentCallUser = null;
+
     hideCallUI();
-  }
+}
+
   
 
 
