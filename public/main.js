@@ -689,13 +689,12 @@ createUserBtn.addEventListener("click", () => {
 function updateUserList(allusers) {
     allusersHtml.innerHTML = "";
 
-    for (const user in allusers) {
+    for (const user of allusers) {   // <-- FIXED
         const li = document.createElement("li");
         const isCurrentUser = user === username.value;
         
         li.textContent = `${user} ${isCurrentUser ? "(You)" : ""}`;
 
-        // Add call button for other users
         if (!isCurrentUser) {
             const btn = document.createElement("button");
             btn.classList.add("call-btn");
