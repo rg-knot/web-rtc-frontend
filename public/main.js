@@ -233,10 +233,10 @@ const startCall = async (user) => {
     });
 };
 
-// socket.on("force-end-call", () => {
-//     console.warn("Call forcefully ended by system (AI moderation).");
-//     endCall(true);   // pass true to show warning message
-// });
+socket.on("force-end-call", () => {
+    console.warn("Call forcefully ended by system (AI moderation).");
+    endCall(true);   // pass true to show warning message
+});
 
 
 // End call
