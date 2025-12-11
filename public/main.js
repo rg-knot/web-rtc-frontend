@@ -120,7 +120,7 @@ endCallBtn.addEventListener("click", () => {
     if (currentCallUser) {
         socket.emit("end-call", { to: currentCallUser });
     }
-    endCall();
+    endCall(false);
 });
 
 
@@ -285,7 +285,7 @@ socket.on("force-end-call", () => {
 //     hideCallUI();
 //   }
 
-function endCall() {
+function endCall(forced) {
     console.log("Ending call...");
 
     // Stop local camera & mic
