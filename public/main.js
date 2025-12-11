@@ -1,431 +1,3 @@
-// const createUserBtn = document.getElementById("create-user");
-// const username = document.getElementById("username");
-// const allusersHtml = document.getElementById("allusers");
-// const localVideo = document.getElementById("localVideo");
-// const remoteVideo = document.getElementById("remoteVideo");
-// const endCallBtn = document.getElementById("end-call-btn");
-
-// // IMPORTANT: CONNECT TO REMOTE NESTJS SERVER
-// // const socket = io("http://34.131.190.182:3000", {
-// //     transports: ["websocket", "polling"], // always include polling first
-// //   });
-  
-// //   const socket = io("https://34.102.240.255:3000", {
-// //     transports: ["websocket", "polling"], // always include polling first
-// //   });
-
-// //   const socket = io("https://webrtc-test.knot.dating", {
-// //     transports: ["websocket", "polling"], // always include polling first
-// //   });
-
-//   const socket = io("https://webrtc-test.knot.dating", {
-//     transports: ["websocket", "polling"]
-// });
-
-
-// let localStream
-// let caller = [];
-// let peerConnection = null;  // override wrapper confusion
-// let currentCallUser = null; // who you are talking to
-
-
-// // Peer connection wrapper
-// const PeerConnection = (function () {
-//     let peerConnection = null;
-
-//     const createPeerConnection = () => {
-//         const config = {
-//             iceServers: [
-//                 { urls: "stun:stun.l.google.com:19302" },
-//                 {
-//                     urls: "turn:34.131.190.182:3478",
-//                     username: "webrtc_user",
-//                     credential: "webrtc_pass"
-//                 }
-//             ]
-//         };
-
-//         const pc = new RTCPeerConnection(config);
-
-//         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-//         pc.ontrack = (event) => {
-//             remoteVideo.srcObject = event.streams[0];
-//         };
-
-//         pc.onicecandidate = (event) => {
-//             if (event.candidate) {
-//                 socket.emit("icecandidate", {
-//                     candidate: event.candidate,
-//                     by: username.value
-//                 });
-//             }
-//         };
-
-//         return pc;
-//     };
-
-//     return {
-//         getInstance: () => {
-//             if (!peerConnection) peerConnection = createPeerConnection();
-//             return peerConnection;
-//         },
-//         reset: () => {
-//             peerConnection = null;
-//         }
-//     };
-// })();
-
-
-// // Join user
-// createUserBtn.addEventListener("click", () => {
-//     console.log("Emitting join-user for:", username.value, "  -> ", socket.id);
-//     if(username.value !== "") {
-//         const box = document.querySelector(".username-input");
-//         socket.emit("join-user", username.value);
-//         box.style.display = 'none';
-//     }
-// });
-
-// // User list
-// socket.on("joined", allusers => {
-//     allusersHtml.innerHTML = "";
-
-//     for(const user in allusers) {
-//         const li = document.createElement("li");
-//         li.textContent = `${user} ${user === username.value ? "(You)" : ""}`;
-
-//         if(user !== username.value) {
-//             const btn = document.createElement("button");
-//             btn.classList.add("call-btn");
-//             btn.addEventListener("click", () => startCall(user));
-
-//             const img = document.createElement("img");
-//             img.src = "./images/phone.png";
-//             img.width = 20;
-
-//             btn.appendChild(img);
-//             li.appendChild(btn);
-//         }
-
-//         allusersHtml.appendChild(li);
-//     }
-// });
-
-// // endCallBtn.addEventListener("click", () => {
-// //     socket.emit("end-call", caller);   // notify backend
-// //     endCall();
-// // });
-// endCallBtn.addEventListener("click", () => {
-//     if (currentCallUser) {
-//         socket.emit("end-call", { to: currentCallUser });
-//     }
-//     endCall();
-// });
-
-
-
-// // Offer received
-// // socket.on("offer", async ({ from, to, offer }) => {
-// //     const pc = PeerConnection.getInstance();
-// //     await pc.setRemoteDescription(offer);
-
-// //     const answer = await pc.createAnswer();
-// //     await pc.setLocalDescription(answer);
-
-// //     socket.emit("answer", { from, to, answer: pc.localDescription });
-
-// //     caller = [from, to];
-// // });
-// socket.on("offer", async ({ from, to, offer }) => {
-//     const pc = PeerConnection.getInstance();
-//     currentCallUser = from;
-
-//     await pc.setRemoteDescription(offer);
-
-//     const answer = await pc.createAnswer();
-//     await pc.setLocalDescription(answer);
-
-//     socket.emit("answer", { from, to, answer: pc.localDescription });
-//     showCallUI();
-// });
-
-
-// // Answer received
-// // socket.on("answer", async ({ from, to, answer }) => {
-// //     const pc = PeerConnection.getInstance();
-// //     await pc.setRemoteDescription(answer);
-
-// //     endCallBtn.style.display = "block";
-// //     caller = [from, to];
-// // });
-
-// socket.on("answer", async ({ from, to, answer }) => {
-//     const pc = PeerConnection.getInstance();
-//     await pc.setRemoteDescription(answer);
-
-//     showCallUI();
-// });
-
-
-// // ICE candidate
-// socket.on("icecandidate", async ({ candidate }) => {
-//     const pc = PeerConnection.getInstance();
-//     await pc.addIceCandidate(new RTCIceCandidate(candidate));
-// });
-
-// // End call
-// socket.on("call-ended", () => {
-//     console.log("Other user ended call");
-  
-//     // Same cleanup
-//     if (peerConnection) {
-//       peerConnection.close();
-//       peerConnection = null;
-//     }
-  
-//     localStream?.getTracks().forEach(t => t.stop());
-//     remoteVideo.srcObject = null;
-//     localVideo.srcObject = null;
-  
-//     hideCallUI();
-//   });
-
-//   function showCallUI() {
-//     const endBtn = document.getElementById("end-call-btn");
-//     endBtn.style.display = "block";
-// }
-
-// function hideCallUI() {
-//     const endBtn = document.getElementById("end-call-btn");
-//     endBtn.style.display = "none";
-
-//     // Stop showing videos
-//     const remoteVideo = document.getElementById("remoteVideo");
-//     const localVideo = document.getElementById("localVideo");
-
-//     remoteVideo.srcObject = null;
-//     localVideo.srcObject = null;
-// }
-
-  
-
-
-// socket.on("connect", () => {
-//     console.log("Socket connected with id:", socket.id);
-// });
-
-// socket.on("connect_error", (err) => {
-//     console.log("Socket connection error:", err);
-// });
-
-// // Initiate call
-// const startCall = async (user) => {
-//     const pc = PeerConnection.getInstance();
-//     currentCallUser = user;   // store who we are calling
-//     const offer = await pc.createOffer();
-//     await pc.setLocalDescription(offer);
-
-//     socket.emit("offer", {
-//         from: username.value,
-//         to: user,
-//         offer: pc.localDescription
-//     });
-// };
-
-// socket.on("force-end-call", () => {
-//     console.warn("Call forcefully ended by system (AI moderation).");
-//     endCall(true);   // pass true to show warning message
-// });
-
-
-// // End call
-// // const endCall = () => {
-// //     const pc = PeerConnection.getInstance();
-// //     if(pc) {
-// //         pc.close();
-// //         endCallBtn.style.display = 'none';
-// //     }
-// // };
-// // const endCall = () => {
-// //     const pc = PeerConnection.getInstance();
-
-// //     if (pc) {
-// //         pc.close();
-// //     }
-
-// //     PeerConnection.reset();
-
-// //     remoteVideo.srcObject = null;
-
-// //     endCallBtn.style.display = "none";
-
-// //     console.log("Call ended and peer connection reset.");
-// // };
-
-
-// // function endCall() {
-// //     // Inform other peer
-// //     socket.emit("call-ended", { to: otherUserId });
-  
-// //     // Stop local camera/audio tracks
-// //     localStream.getTracks().forEach(t => t.stop());
-  
-// //     // Remove video
-// //     remoteVideo.srcObject = null;
-// //     localVideo.srcObject = null;
-  
-// //     // Close RTCPeerConnection
-// //     if (peerConnection) {
-// //       peerConnection.close();
-// //       peerConnection = null;
-// //     }
-  
-// //     // Hide call UI
-// //     hideCallUI();
-// //   }
-
-// function endCall() {
-//     console.log("Ending call...");
-
-//     // Stop local camera & mic
-//     if (localStream) {
-//         localStream.getTracks().forEach(t => t.stop());
-//     }
-
-//     // Clear video
-//     remoteVideo.srcObject = null;
-//     localVideo.srcObject = null;
-
-//     // Close peer connection
-//     const pc = PeerConnection.getInstance();
-//     if (pc) pc.close();
-
-//     PeerConnection.reset();
-//     currentCallUser = null;
-
-//     // stop local stream only when call actually ends
-//     if (forced) {
-//         alert("Call ended automatically due to sharing personal information.");
-//     }
-
-//     hideCallUI();
-// }
-
-  
-
-
-// let audioRecorder;
-
-// // =========================
-// //  START AUDIO STREAMING
-// // =========================
-// function startAudioStreaming(stream) {
-//     try {
-//         audioContext = new AudioContext({ sampleRate: 16000 });
-
-//         const source = audioContext.createMediaStreamSource(stream);
-
-//         processor = audioContext.createScriptProcessor(4096, 1, 1);
-
-//         processor.onaudioprocess = (e) => {
-//             const input = e.inputBuffer.getChannelData(0);
-//             const pcm16 = convertFloatToInt16(input);
-//             socket.emit("audio-chunk", pcm16);
-//         };
-
-//         source.connect(processor);
-//         processor.connect(audioContext.destination);
-
-//         console.log("Audio streaming started using Web Audio API");
-//     } catch (err) {
-//         console.error("Audio streaming error:", err);
-//     }
-// }
-
-// function convertFloatToInt16(float32Array) {
-//     let int16Array = new Int16Array(float32Array.length);
-//     for (let i = 0; i < float32Array.length; i++) {
-//         let s = Math.max(-1, Math.min(1, float32Array[i]));
-//         int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-//     }
-//     return int16Array;
-// }
-
-// // async function startAudioStreaming(stream) {
-// //     try {
-// //         const audioContext = new AudioContext({
-// //             sampleRate: 48000   // Ideal for transcription (Whisper, Google STT)
-// //         });
-
-// //         // Load audio worklet script
-// //         await audioContext.audioWorklet.addModule("/audio-processor.js");
-
-// //         const source = audioContext.createMediaStreamSource(stream);
-
-// //         const workletNode = new AudioWorkletNode(audioContext, "audio-processor");
-
-// //         // Receive raw PCM float32 audio
-// //         workletNode.port.onmessage = (event) => {
-// //             const float32Data = event.data;
-
-// //             // Convert Float32Array → Int16Array (smaller size)
-// //             const int16Data = floatTo16BitPCM(float32Data);
-
-// //             // Send PCM chunk to backend
-// //             socket.emit("audio-chunk", int16Data);
-// //         };
-
-// //         // Connect
-// //         source.connect(workletNode).connect(audioContext.destination);
-
-// //         console.log("Audio streaming started using AudioWorkletNode");
-
-// //     } catch (error) {
-// //         console.error("Audio Worklet error:", error);
-// //     }
-// // }
-
-// // // Convert Float32 → 16-bit PCM before sending
-// // function floatTo16BitPCM(float32Array) {
-// //     let buffer = new Int16Array(float32Array.length);
-// //     for (let i = 0; i < float32Array.length; i++) {
-// //         let s = Math.max(-1, Math.min(1, float32Array[i]));
-// //         buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-// //     }
-// //     return buffer;
-// // }
-
-
-
-// // =========================
-// //  START CAM + MIC
-// // =========================
-// async function startMyVideo() {
-//     try {
-//         localStream = await navigator.mediaDevices.getUserMedia({
-//             audio: true,
-//             video: true,
-//         });
-
-//         localVideo.srcObject = localStream;
-
-//         // start audio streaming
-//         startAudioStreaming(localStream);
-
-//     } catch (err) {
-//         console.error("Camera/Mic error:", err);
-//     }
-// }
-
-
-// startMyVideo();
-
-
-// ============================================
-// FIXED FRONTEND CODE - Aligned with Backend
-// ============================================
-
 const createUserBtn = document.getElementById("create-user");
 const username = document.getElementById("username");
 const allusersHtml = document.getElementById("allusers");
@@ -433,269 +5,97 @@ const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const endCallBtn = document.getElementById("end-call-btn");
 
-// Socket connection
-const socket = io("https://webrtc-test.knot.dating", {
+// IMPORTANT: CONNECT TO REMOTE NESTJS SERVER
+// const socket = io("http://34.131.190.182:3000", {
+//     transports: ["websocket", "polling"], // always include polling first
+//   });
+  
+//   const socket = io("https://34.102.240.255:3000", {
+//     transports: ["websocket", "polling"], // always include polling first
+//   });
+
+//   const socket = io("https://webrtc-test.knot.dating", {
+//     transports: ["websocket", "polling"], // always include polling first
+//   });
+
+  const socket = io("https://webrtc-test.knot.dating", {
     transports: ["websocket", "polling"]
 });
 
-// Global state
-let localStream = null;
-let peerConnection = null;
-let currentCallUser = null;
-let audioContext = null;
-let processor = null;
-let isInCall = false;
 
-// ============================================
-// PEER CONNECTION CONFIGURATION
-// ============================================
-const ICE_SERVERS = {
-    iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        {
-            urls: "turn:34.131.190.182:3478",
-            username: "webrtc_user",
-            credential: "webrtc_pass"
-        }
-    ]
-};
+let localStream
+let caller = [];
+let peerConnection = null;  // override wrapper confusion
+let currentCallUser = null; // who you are talking to
 
-/**
- * Create RTCPeerConnection
- */
-function createPeerConnection() {
-    console.log('📡 Creating peer connection...');
-    
-    const pc = new RTCPeerConnection(ICE_SERVERS);
 
-    // Add local stream tracks
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            pc.addTrack(track, localStream);
-            console.log(`➕ Added ${track.kind} track to peer connection`);
-        });
-    }
+// Peer connection wrapper
+const PeerConnection = (function () {
+    let peerConnection = null;
 
-    // Handle incoming tracks
-    pc.ontrack = (event) => {
-        console.log('📺 Received remote track:', event.track.kind);
-        remoteVideo.srcObject = event.streams[0];
+    const createPeerConnection = () => {
+        const config = {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                {
+                    urls: "turn:34.131.190.182:3478",
+                    username: "webrtc_user",
+                    credential: "webrtc_pass"
+                }
+            ]
+        };
+
+        const pc = new RTCPeerConnection(config);
+
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+        pc.ontrack = (event) => {
+            remoteVideo.srcObject = event.streams[0];
+        };
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit("icecandidate", {
+                    candidate: event.candidate,
+                    by: username.value
+                });
+            }
+        };
+
+        return pc;
     };
 
-    // Handle ICE candidates
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            console.log('🧊 Sending ICE candidate');
-            socket.emit("icecandidate", {
-                candidate: event.candidate,
-                to: currentCallUser
-            });
+    return {
+        getInstance: () => {
+            if (!peerConnection) peerConnection = createPeerConnection();
+            return peerConnection;
+        },
+        reset: () => {
+            peerConnection = null;
         }
     };
+})();
 
-    // Handle connection state changes
-    pc.onconnectionstatechange = () => {
-        console.log('🔗 Connection state:', pc.connectionState);
-        
-        if (pc.connectionState === 'disconnected' || 
-            pc.connectionState === 'failed' || 
-            pc.connectionState === 'closed') {
-            console.log('Connection lost, cleaning up...');
-            endCall(false);
-        }
-    };
 
-    return pc;
-}
-
-// ============================================
-// SOCKET EVENT HANDLERS
-// ============================================
-
-socket.on("connect", () => {
-    console.log("✅ Socket connected:", socket.id);
-});
-
-socket.on("connect_error", (err) => {
-    console.error("❌ Socket connection error:", err);
-    alert("Connection error. Please check your internet connection.");
-});
-
-socket.on("disconnect", () => {
-    console.log("❌ Socket disconnected");
-    if (isInCall) {
-        endCall(false);
-    }
-});
-
-/**
- * User joined - update user list
- */
-socket.on("joined", (allusers) => {
-    console.log('👥 User list updated:', allusers);
-    updateUserList(allusers);
-});
-
-/**
- * Incoming call offer
- */
-socket.on("offer", async ({ from, to, offer }) => {
-    console.log(`📞 Incoming call from: ${from}`);
-    
-    // Ask user to accept call
-    const accept = confirm(`Incoming call from ${from}. Accept?`);
-    
-    if (!accept) {
-        console.log('📵 Call rejected');
-        socket.emit("end-call", { from: to, to: from });
-        return;
-    }
-
-    try {
-        currentCallUser = from;
-        isInCall = true;
-
-        // Create peer connection
-        peerConnection = createPeerConnection();
-
-        // Set remote description (offer)
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        console.log('✅ Remote description (offer) set');
-
-        // Create answer
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        console.log('✅ Local description (answer) set');
-
-        // Send answer back
-        socket.emit("answer", {
-            from: to,
-            to: from,
-            answer: peerConnection.localDescription
-        });
-
-        // Start audio streaming ONLY AFTER answer
-        startAudioStreaming(localStream);
-
-        // Show call UI
-        showCallUI();
-        
-        console.log('✅ Call accepted and answer sent');
-
-    } catch (error) {
-        console.error('❌ Error handling offer:', error);
-        alert('Failed to accept call: ' + error.message);
-        endCall(false);
-    }
-});
-
-/**
- * Call answer received
- */
-socket.on("answer", async ({ from, to, answer }) => {
-    console.log(`📞 Call answered by: ${from}`);
-
-    try {
-        if (!peerConnection) {
-            console.error('❌ No peer connection exists');
-            return;
-        }
-
-        // Set remote description (answer)
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-        console.log('✅ Remote description (answer) set');
-
-        // Start audio streaming ONLY AFTER answer
-        startAudioStreaming(localStream);
-
-        // Show call UI
-        showCallUI();
-        
-        console.log('✅ Call connected');
-
-    } catch (error) {
-        console.error('❌ Error handling answer:', error);
-        alert('Failed to establish call: ' + error.message);
-        endCall(false);
-    }
-});
-
-/**
- * ICE candidate received
- */
-socket.on("icecandidate", async ({ candidate }) => {
-    console.log('🧊 Received ICE candidate');
-
-    try {
-        if (peerConnection && candidate) {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            console.log('✅ ICE candidate added');
-        }
-    } catch (error) {
-        console.error('❌ Error adding ICE candidate:', error);
-    }
-});
-
-/**
- * Call ended by other user
- */
-socket.on("call-ended", () => {
-    console.log('📵 Call ended by other user');
-    endCall(false);
-});
-
-/**
- * Call force-ended by AI moderation
- */
-socket.on("force-end-call", ({ reason }) => {
-    console.warn('🚨 Call force-ended:', reason);
-    endCall(true, reason);
-});
-
-/**
- * Transcription received (optional - for debugging)
- */
-socket.on("transcription", ({ username: speaker, text, timestamp }) => {
-    console.log(`📝 [${speaker}]:`, text);
-    // You can display this in UI if needed
-});
-
-// ============================================
-// USER INTERFACE FUNCTIONS
-// ============================================
-
-/**
- * Join as user
- */
+// Join user
 createUserBtn.addEventListener("click", () => {
-    const user = username.value.trim();
-    
-    if (user === "") {
-        alert("Please enter a username");
-        return;
+    console.log("Emitting join-user for:", username.value, "  -> ", socket.id);
+    if(username.value !== "") {
+        const box = document.querySelector(".username-input");
+        socket.emit("join-user", username.value);
+        box.style.display = 'none';
     }
-
-    console.log(`👤 Joining as: ${user}`);
-    socket.emit("join-user", user);
-    
-    // Hide username input
-    const box = document.querySelector(".username-input");
-    box.style.display = 'none';
 });
 
-/**
- * Update user list
- */
-function updateUserList(allusers) {
+// User list
+socket.on("joined", allusers => {
     allusersHtml.innerHTML = "";
 
-    for (const user of allusers) {   // <-- FIXED
+    for(const user in allusers) {
         const li = document.createElement("li");
-        const isCurrentUser = user === username.value;
-        
-        li.textContent = `${user} ${isCurrentUser ? "(You)" : ""}`;
+        li.textContent = `${user} ${user === username.value ? "(You)" : ""}`;
 
-        if (!isCurrentUser) {
+        if(user !== username.value) {
             const btn = document.createElement("button");
             btn.classList.add("call-btn");
             btn.addEventListener("click", () => startCall(user));
@@ -710,342 +110,968 @@ function updateUserList(allusers) {
 
         allusersHtml.appendChild(li);
     }
-}
-
-/**
- * Start call
- */
-async function startCall(user) {
-    if (isInCall) {
-        alert("You are already in a call");
-        return;
-    }
-
-    console.log(`📞 Starting call with: ${user}`);
-
-    try {
-        currentCallUser = user;
-        isInCall = true;
-
-        // Create peer connection
-        peerConnection = createPeerConnection();
-
-        // Create offer
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        console.log('✅ Local description (offer) set');
-
-        // Send offer
-        socket.emit("offer", {
-            from: username.value,
-            to: user,
-            offer: peerConnection.localDescription
-        });
-
-        console.log('✅ Offer sent');
-
-    } catch (error) {
-        console.error('❌ Error starting call:', error);
-        alert('Failed to start call: ' + error.message);
-        endCall(false);
-    }
-}
-
-/**
- * End call button
- */
-endCallBtn.addEventListener("click", () => {
-    console.log('📵 User clicked end call');
-    
-    if (currentCallUser) {
-        socket.emit("end-call", {
-            from: username.value,
-            to: currentCallUser
-        });
-    }
-    
-    endCall(false);
 });
 
-/**
- * End call function
- */
-function endCall(forced = false, reason = null) {
-    console.log('📵 Ending call...', forced ? '(Forced)' : '(Normal)');
+// endCallBtn.addEventListener("click", () => {
+//     socket.emit("end-call", caller);   // notify backend
+//     endCall();
+// });
+endCallBtn.addEventListener("click", () => {
+    if (currentCallUser) {
+        socket.emit("end-call", { to: currentCallUser });
+    }
+    endCall();
+});
 
-    // Stop audio streaming
-    stopAudioStreaming();
+
+
+// Offer received
+// socket.on("offer", async ({ from, to, offer }) => {
+//     const pc = PeerConnection.getInstance();
+//     await pc.setRemoteDescription(offer);
+
+//     const answer = await pc.createAnswer();
+//     await pc.setLocalDescription(answer);
+
+//     socket.emit("answer", { from, to, answer: pc.localDescription });
+
+//     caller = [from, to];
+// });
+socket.on("offer", async ({ from, to, offer }) => {
+    const pc = PeerConnection.getInstance();
+    currentCallUser = from;
+
+    await pc.setRemoteDescription(offer);
+
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+
+    socket.emit("answer", { from, to, answer: pc.localDescription });
+    showCallUI();
+});
+
+
+// Answer received
+// socket.on("answer", async ({ from, to, answer }) => {
+//     const pc = PeerConnection.getInstance();
+//     await pc.setRemoteDescription(answer);
+
+//     endCallBtn.style.display = "block";
+//     caller = [from, to];
+// });
+
+socket.on("answer", async ({ from, to, answer }) => {
+    const pc = PeerConnection.getInstance();
+    await pc.setRemoteDescription(answer);
+
+    showCallUI();
+});
+
+
+// ICE candidate
+socket.on("icecandidate", async ({ candidate }) => {
+    const pc = PeerConnection.getInstance();
+    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+});
+
+// End call
+socket.on("call-ended", () => {
+    console.log("Other user ended call");
+  
+    // Same cleanup
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
+    }
+  
+    localStream?.getTracks().forEach(t => t.stop());
+    remoteVideo.srcObject = null;
+    localVideo.srcObject = null;
+  
+    hideCallUI();
+  });
+
+  function showCallUI() {
+    const endBtn = document.getElementById("end-call-btn");
+    endBtn.style.display = "block";
+}
+
+function hideCallUI() {
+    const endBtn = document.getElementById("end-call-btn");
+    endBtn.style.display = "none";
+
+    // Stop showing videos
+    const remoteVideo = document.getElementById("remoteVideo");
+    const localVideo = document.getElementById("localVideo");
+
+    remoteVideo.srcObject = null;
+    localVideo.srcObject = null;
+}
+
+  
+
+
+socket.on("connect", () => {
+    console.log("Socket connected with id:", socket.id);
+});
+
+socket.on("connect_error", (err) => {
+    console.log("Socket connection error:", err);
+});
+
+// Initiate call
+const startCall = async (user) => {
+    const pc = PeerConnection.getInstance();
+    currentCallUser = user;   // store who we are calling
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    socket.emit("offer", {
+        from: username.value,
+        to: user,
+        offer: pc.localDescription
+    });
+};
+
+socket.on("force-end-call", () => {
+    console.warn("Call forcefully ended by system (AI moderation).");
+    endCall(true);   // pass true to show warning message
+});
+
+
+// End call
+// const endCall = () => {
+//     const pc = PeerConnection.getInstance();
+//     if(pc) {
+//         pc.close();
+//         endCallBtn.style.display = 'none';
+//     }
+// };
+// const endCall = () => {
+//     const pc = PeerConnection.getInstance();
+
+//     if (pc) {
+//         pc.close();
+//     }
+
+//     PeerConnection.reset();
+
+//     remoteVideo.srcObject = null;
+
+//     endCallBtn.style.display = "none";
+
+//     console.log("Call ended and peer connection reset.");
+// };
+
+
+// function endCall() {
+//     // Inform other peer
+//     socket.emit("call-ended", { to: otherUserId });
+  
+//     // Stop local camera/audio tracks
+//     localStream.getTracks().forEach(t => t.stop());
+  
+//     // Remove video
+//     remoteVideo.srcObject = null;
+//     localVideo.srcObject = null;
+  
+//     // Close RTCPeerConnection
+//     if (peerConnection) {
+//       peerConnection.close();
+//       peerConnection = null;
+//     }
+  
+//     // Hide call UI
+//     hideCallUI();
+//   }
+
+function endCall() {
+    console.log("Ending call...");
+
+    // Stop local camera & mic
+    if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+    }
+
+    // Clear video
+    remoteVideo.srcObject = null;
+    localVideo.srcObject = null;
 
     // Close peer connection
-    if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-        console.log('✅ Peer connection closed');
-    }
+    const pc = PeerConnection.getInstance();
+    if (pc) pc.close();
 
-    // Clear remote video
-    if (remoteVideo) {
-        remoteVideo.srcObject = null;
-    }
-
-    // Reset state
+    PeerConnection.reset();
     currentCallUser = null;
-    isInCall = false;
 
-    // Hide call UI
-    hideCallUI();
-
-    // Show alert if force-ended
+    // stop local stream only when call actually ends
     if (forced) {
-        const message = reason || "Call ended due to policy violation";
-        alert(`⚠️ ${message}`);
+        alert("Call ended automatically due to sharing personal information.");
     }
 
-    console.log('✅ Call ended');
+    hideCallUI();
 }
 
-/**
- * Show call UI
- */
-function showCallUI() {
-    endCallBtn.style.display = "block";
-    console.log('✅ Call UI shown');
-}
+  
 
-/**
- * Hide call UI
- */
-function hideCallUI() {
-    endCallBtn.style.display = "none";
-    console.log('✅ Call UI hidden');
-}
 
-// ============================================
-// AUDIO STREAMING FOR TRANSCRIPTION
-// ============================================
+let audioRecorder;
 
-/**
- * Start streaming audio to backend for transcription
- * CRITICAL: Only call this AFTER the call is connected (after answer)
- */
+// =========================
+//  START AUDIO STREAMING
+// =========================
 function startAudioStreaming(stream) {
-    if (!stream) {
-        console.error('❌ No stream available for audio streaming');
-        return;
-    }
-
-    // Stop existing audio streaming if any
-    stopAudioStreaming();
-
     try {
-        console.log('🎤 Starting audio streaming for transcription...');
-
-        // Create audio context
         audioContext = new AudioContext({ sampleRate: 16000 });
 
-        // Create media stream source
         const source = audioContext.createMediaStreamSource(stream);
 
-        // Create script processor (4096 buffer size, 1 input channel, 1 output channel)
         processor = audioContext.createScriptProcessor(4096, 1, 1);
 
-        // Process audio
         processor.onaudioprocess = (e) => {
             const input = e.inputBuffer.getChannelData(0);
             const pcm16 = convertFloatToInt16(input);
-            
-            // Send to backend
             socket.emit("audio-chunk", pcm16);
         };
 
-        // Connect nodes
         source.connect(processor);
         processor.connect(audioContext.destination);
 
-        console.log('✅ Audio streaming started (16kHz, 16-bit PCM)');
-
-    } catch (error) {
-        console.error('❌ Audio streaming error:', error);
+        console.log("Audio streaming started using Web Audio API");
+    } catch (err) {
+        console.error("Audio streaming error:", err);
     }
 }
 
-/**
- * Stop audio streaming
- */
-function stopAudioStreaming() {
-    if (processor) {
-        processor.disconnect();
-        processor = null;
-        console.log('⏹️ Audio processor stopped');
-    }
-
-    if (audioContext) {
-        audioContext.close();
-        audioContext = null;
-        console.log('⏹️ Audio context closed');
-    }
-}
-
-// /**
-//  * Convert Float32Array to Int16Array (PCM 16-bit)
-//  */
-// function convertFloatToInt16(float32Array) {
-//     const int16Array = new Int16Array(float32Array.length);
-    
-//     for (let i = 0; i < float32Array.length; i++) {
-//         // Clamp value between -1 and 1
-//         const s = Math.max(-1, Math.min(1, float32Array[i]));
-//         // Convert to 16-bit integer
-//         int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-//     }
-    
-//     return int16Array;
-// }
-/**
- * Convert Float32Array to Int16 PCM Buffer (16-bit little-endian)
- */
 function convertFloatToInt16(float32Array) {
-    const buffer = new ArrayBuffer(float32Array.length * 2); // 2 bytes per sample
-    const view = new DataView(buffer);
-
+    let int16Array = new Int16Array(float32Array.length);
     for (let i = 0; i < float32Array.length; i++) {
         let s = Math.max(-1, Math.min(1, float32Array[i]));
-        view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true); // little-endian
+        int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
     }
-
-    return buffer; // return ArrayBuffer ready to send via socket
+    return int16Array;
 }
 
+// async function startAudioStreaming(stream) {
+//     try {
+//         const audioContext = new AudioContext({
+//             sampleRate: 48000   // Ideal for transcription (Whisper, Google STT)
+//         });
 
-// ============================================
-// INITIALIZE CAMERA AND MICROPHONE
-// ============================================
+//         // Load audio worklet script
+//         await audioContext.audioWorklet.addModule("/audio-processor.js");
 
-/**
- * Start local video and audio
- */
+//         const source = audioContext.createMediaStreamSource(stream);
+
+//         const workletNode = new AudioWorkletNode(audioContext, "audio-processor");
+
+//         // Receive raw PCM float32 audio
+//         workletNode.port.onmessage = (event) => {
+//             const float32Data = event.data;
+
+//             // Convert Float32Array → Int16Array (smaller size)
+//             const int16Data = floatTo16BitPCM(float32Data);
+
+//             // Send PCM chunk to backend
+//             socket.emit("audio-chunk", int16Data);
+//         };
+
+//         // Connect
+//         source.connect(workletNode).connect(audioContext.destination);
+
+//         console.log("Audio streaming started using AudioWorkletNode");
+
+//     } catch (error) {
+//         console.error("Audio Worklet error:", error);
+//     }
+// }
+
+// // Convert Float32 → 16-bit PCM before sending
+// function floatTo16BitPCM(float32Array) {
+//     let buffer = new Int16Array(float32Array.length);
+//     for (let i = 0; i < float32Array.length; i++) {
+//         let s = Math.max(-1, Math.min(1, float32Array[i]));
+//         buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+//     }
+//     return buffer;
+// }
+
+
+
+// =========================
+//  START CAM + MIC
+// =========================
 async function startMyVideo() {
     try {
-        console.log('🎥 Requesting camera and microphone access...');
-
         localStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                sampleRate: 16000  // Match audio context sample rate
-            },
-            video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: "user"
-            }
+            audio: true,
+            video: true,
         });
 
-        // Display local video
         localVideo.srcObject = localStream;
 
-        console.log('✅ Camera and microphone started');
-        console.log('   Audio tracks:', localStream.getAudioTracks().length);
-        console.log('   Video tracks:', localStream.getVideoTracks().length);
+        // start audio streaming
+        startAudioStreaming(localStream);
 
-        // DO NOT START AUDIO STREAMING HERE
-        // Audio streaming starts only when call connects (after answer)
-
-    } catch (error) {
-        console.error('❌ Camera/Microphone error:', error);
-        alert('Failed to access camera/microphone. Please grant permissions and refresh.');
+    } catch (err) {
+        console.error("Camera/Mic error:", err);
     }
 }
 
-// ============================================
-// CLEANUP ON PAGE UNLOAD
-// ============================================
 
-window.addEventListener('beforeunload', () => {
-    if (isInCall) {
-        socket.emit("end-call", {
-            from: username.value,
-            to: currentCallUser
-        });
-    }
-
-    stopAudioStreaming();
-
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-    }
-
-    if (peerConnection) {
-        peerConnection.close();
-    }
-});
-
-// ============================================
-// START APPLICATION
-// ============================================
-
-// Initialize camera and microphone on page load
 startMyVideo();
 
-console.log('🚀 Application initialized');
 
-// ============================================
-// FLOW SUMMARY
-// ============================================
-/**
- * CORRECT FLOW:
- * 
- * 1. Page loads → startMyVideo() → Camera/Mic access granted
- *    - localStream created
- *    - localVideo displays camera
- *    - ❌ Audio streaming NOT started yet
- * 
- * 2. User enters username → Click "Create" → emit('join-user')
- *    - Server stores user
- *    - Receives user list
- * 
- * 3. User A clicks call on User B → startCall()
- *    - Create peer connection
- *    - Create offer
- *    - emit('offer', { from: A, to: B, offer })
- *    - ❌ Audio streaming NOT started yet
- * 
- * 4. User B receives offer → socket.on('offer')
- *    - User prompted to accept/reject
- *    - If accepted:
- *      - Create peer connection
- *      - Set remote description (offer)
- *      - Create answer
- *      - Set local description (answer)
- *      - emit('answer', { from: B, to: A, answer })
- *      - ✅ START AUDIO STREAMING for User B
- * 
- * 5. User A receives answer → socket.on('answer')
- *    - Set remote description (answer)
- *    - ✅ START AUDIO STREAMING for User A
- * 
- * 6. ICE candidates exchanged
- *    - Connection established
- * 
- * 7. Audio flows:
- *    - User A speaks → audio-chunk → Backend → Google STT → Transcription
- *    - User B speaks → audio-chunk → Backend → Google STT → Transcription
- * 
- * 8. AI moderation checks transcriptions
- *    - If personal info detected → socket.on('force-end-call')
- *    - Both users disconnected
- * 
- * 9. Normal end:
- *    - User clicks end call → emit('end-call')
- *    - Stop audio streaming
- *    - Close peer connection
- *    - Clear videos
- * 
- * KEY POINTS:
- * - ✅ Audio streaming starts AFTER answer (when call is connected)
- * - ✅ Each user has their own audio stream to backend
- * - ✅ Backend has separate Google STT stream per user
- * - ✅ AI moderation tracks who said what
- * - ✅ Force end affects both users
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // ============================================
+// // FIXED FRONTEND CODE - Aligned with Backend
+// // ============================================
+
+// const createUserBtn = document.getElementById("create-user");
+// const username = document.getElementById("username");
+// const allusersHtml = document.getElementById("allusers");
+// const localVideo = document.getElementById("localVideo");
+// const remoteVideo = document.getElementById("remoteVideo");
+// const endCallBtn = document.getElementById("end-call-btn");
+
+// // Socket connection
+// const socket = io("https://webrtc-test.knot.dating", {
+//     transports: ["websocket", "polling"]
+// });
+
+// // Global state
+// let localStream = null;
+// let peerConnection = null;
+// let currentCallUser = null;
+// let audioContext = null;
+// let processor = null;
+// let isInCall = false;
+
+// // ============================================
+// // PEER CONNECTION CONFIGURATION
+// // ============================================
+// const ICE_SERVERS = {
+//     iceServers: [
+//         { urls: "stun:stun.l.google.com:19302" },
+//         {
+//             urls: "turn:34.131.190.182:3478",
+//             username: "webrtc_user",
+//             credential: "webrtc_pass"
+//         }
+//     ]
+// };
+
+// /**
+//  * Create RTCPeerConnection
+//  */
+// function createPeerConnection() {
+//     console.log('📡 Creating peer connection...');
+    
+//     const pc = new RTCPeerConnection(ICE_SERVERS);
+
+//     // Add local stream tracks
+//     if (localStream) {
+//         localStream.getTracks().forEach(track => {
+//             pc.addTrack(track, localStream);
+//             console.log(`➕ Added ${track.kind} track to peer connection`);
+//         });
+//     }
+
+//     // Handle incoming tracks
+//     pc.ontrack = (event) => {
+//         console.log('📺 Received remote track:', event.track.kind);
+//         remoteVideo.srcObject = event.streams[0];
+//     };
+
+//     // Handle ICE candidates
+//     pc.onicecandidate = (event) => {
+//         if (event.candidate) {
+//             console.log('🧊 Sending ICE candidate');
+//             socket.emit("icecandidate", {
+//                 candidate: event.candidate,
+//                 to: currentCallUser
+//             });
+//         }
+//     };
+
+//     // Handle connection state changes
+//     pc.onconnectionstatechange = () => {
+//         console.log('🔗 Connection state:', pc.connectionState);
+        
+//         if (pc.connectionState === 'disconnected' || 
+//             pc.connectionState === 'failed' || 
+//             pc.connectionState === 'closed') {
+//             console.log('Connection lost, cleaning up...');
+//             endCall(false);
+//         }
+//     };
+
+//     return pc;
+// }
+
+// // ============================================
+// // SOCKET EVENT HANDLERS
+// // ============================================
+
+// socket.on("connect", () => {
+//     console.log("✅ Socket connected:", socket.id);
+// });
+
+// socket.on("connect_error", (err) => {
+//     console.error("❌ Socket connection error:", err);
+//     alert("Connection error. Please check your internet connection.");
+// });
+
+// socket.on("disconnect", () => {
+//     console.log("❌ Socket disconnected");
+//     if (isInCall) {
+//         endCall(false);
+//     }
+// });
+
+// /**
+//  * User joined - update user list
+//  */
+// socket.on("joined", (allusers) => {
+//     console.log('👥 User list updated:', allusers);
+//     updateUserList(allusers);
+// });
+
+// /**
+//  * Incoming call offer
+//  */
+// socket.on("offer", async ({ from, to, offer }) => {
+//     console.log(`📞 Incoming call from: ${from}`);
+    
+//     // Ask user to accept call
+//     const accept = confirm(`Incoming call from ${from}. Accept?`);
+    
+//     if (!accept) {
+//         console.log('📵 Call rejected');
+//         socket.emit("end-call", { from: to, to: from });
+//         return;
+//     }
+
+//     try {
+//         currentCallUser = from;
+//         isInCall = true;
+
+//         // Create peer connection
+//         peerConnection = createPeerConnection();
+
+//         // Set remote description (offer)
+//         await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+//         console.log('✅ Remote description (offer) set');
+
+//         // Create answer
+//         const answer = await peerConnection.createAnswer();
+//         await peerConnection.setLocalDescription(answer);
+//         console.log('✅ Local description (answer) set');
+
+//         // Send answer back
+//         socket.emit("answer", {
+//             from: to,
+//             to: from,
+//             answer: peerConnection.localDescription
+//         });
+
+//         // Start audio streaming ONLY AFTER answer
+//         startAudioStreaming(localStream);
+
+//         // Show call UI
+//         showCallUI();
+        
+//         console.log('✅ Call accepted and answer sent');
+
+//     } catch (error) {
+//         console.error('❌ Error handling offer:', error);
+//         alert('Failed to accept call: ' + error.message);
+//         endCall(false);
+//     }
+// });
+
+// /**
+//  * Call answer received
+//  */
+// socket.on("answer", async ({ from, to, answer }) => {
+//     console.log(`📞 Call answered by: ${from}`);
+
+//     try {
+//         if (!peerConnection) {
+//             console.error('❌ No peer connection exists');
+//             return;
+//         }
+
+//         // Set remote description (answer)
+//         await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+//         console.log('✅ Remote description (answer) set');
+
+//         // Start audio streaming ONLY AFTER answer
+//         startAudioStreaming(localStream);
+
+//         // Show call UI
+//         showCallUI();
+        
+//         console.log('✅ Call connected');
+
+//     } catch (error) {
+//         console.error('❌ Error handling answer:', error);
+//         alert('Failed to establish call: ' + error.message);
+//         endCall(false);
+//     }
+// });
+
+// /**
+//  * ICE candidate received
+//  */
+// socket.on("icecandidate", async ({ candidate }) => {
+//     console.log('🧊 Received ICE candidate');
+
+//     try {
+//         if (peerConnection && candidate) {
+//             await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+//             console.log('✅ ICE candidate added');
+//         }
+//     } catch (error) {
+//         console.error('❌ Error adding ICE candidate:', error);
+//     }
+// });
+
+// /**
+//  * Call ended by other user
+//  */
+// socket.on("call-ended", () => {
+//     console.log('📵 Call ended by other user');
+//     endCall(false);
+// });
+
+// /**
+//  * Call force-ended by AI moderation
+//  */
+// socket.on("force-end-call", ({ reason }) => {
+//     console.warn('🚨 Call force-ended:', reason);
+//     endCall(true, reason);
+// });
+
+// /**
+//  * Transcription received (optional - for debugging)
+//  */
+// socket.on("transcription", ({ username: speaker, text, timestamp }) => {
+//     console.log(`📝 [${speaker}]:`, text);
+//     // You can display this in UI if needed
+// });
+
+// // ============================================
+// // USER INTERFACE FUNCTIONS
+// // ============================================
+
+// /**
+//  * Join as user
+//  */
+// createUserBtn.addEventListener("click", () => {
+//     const user = username.value.trim();
+    
+//     if (user === "") {
+//         alert("Please enter a username");
+//         return;
+//     }
+
+//     console.log(`👤 Joining as: ${user}`);
+//     socket.emit("join-user", user);
+    
+//     // Hide username input
+//     const box = document.querySelector(".username-input");
+//     box.style.display = 'none';
+// });
+
+// /**
+//  * Update user list
+//  */
+// function updateUserList(allusers) {
+//     allusersHtml.innerHTML = "";
+
+//     for (const user of allusers) {   // <-- FIXED
+//         const li = document.createElement("li");
+//         const isCurrentUser = user === username.value;
+        
+//         li.textContent = `${user} ${isCurrentUser ? "(You)" : ""}`;
+
+//         if (!isCurrentUser) {
+//             const btn = document.createElement("button");
+//             btn.classList.add("call-btn");
+//             btn.addEventListener("click", () => startCall(user));
+
+//             const img = document.createElement("img");
+//             img.src = "./images/phone.png";
+//             img.width = 20;
+
+//             btn.appendChild(img);
+//             li.appendChild(btn);
+//         }
+
+//         allusersHtml.appendChild(li);
+//     }
+// }
+
+// /**
+//  * Start call
+//  */
+// async function startCall(user) {
+//     if (isInCall) {
+//         alert("You are already in a call");
+//         return;
+//     }
+
+//     console.log(`📞 Starting call with: ${user}`);
+
+//     try {
+//         currentCallUser = user;
+//         isInCall = true;
+
+//         // Create peer connection
+//         peerConnection = createPeerConnection();
+
+//         // Create offer
+//         const offer = await peerConnection.createOffer();
+//         await peerConnection.setLocalDescription(offer);
+//         console.log('✅ Local description (offer) set');
+
+//         // Send offer
+//         socket.emit("offer", {
+//             from: username.value,
+//             to: user,
+//             offer: peerConnection.localDescription
+//         });
+
+//         console.log('✅ Offer sent');
+
+//     } catch (error) {
+//         console.error('❌ Error starting call:', error);
+//         alert('Failed to start call: ' + error.message);
+//         endCall(false);
+//     }
+// }
+
+// /**
+//  * End call button
+//  */
+// endCallBtn.addEventListener("click", () => {
+//     console.log('📵 User clicked end call');
+    
+//     if (currentCallUser) {
+//         socket.emit("end-call", {
+//             from: username.value,
+//             to: currentCallUser
+//         });
+//     }
+    
+//     endCall(false);
+// });
+
+// /**
+//  * End call function
+//  */
+// function endCall(forced = false, reason = null) {
+//     console.log('📵 Ending call...', forced ? '(Forced)' : '(Normal)');
+
+//     // Stop audio streaming
+//     stopAudioStreaming();
+
+//     // Close peer connection
+//     if (peerConnection) {
+//         peerConnection.close();
+//         peerConnection = null;
+//         console.log('✅ Peer connection closed');
+//     }
+
+//     // Clear remote video
+//     if (remoteVideo) {
+//         remoteVideo.srcObject = null;
+//     }
+
+//     // Reset state
+//     currentCallUser = null;
+//     isInCall = false;
+
+//     // Hide call UI
+//     hideCallUI();
+
+//     // Show alert if force-ended
+//     if (forced) {
+//         const message = reason || "Call ended due to policy violation";
+//         alert(`⚠️ ${message}`);
+//     }
+
+//     console.log('✅ Call ended');
+// }
+
+// /**
+//  * Show call UI
+//  */
+// function showCallUI() {
+//     endCallBtn.style.display = "block";
+//     console.log('✅ Call UI shown');
+// }
+
+// /**
+//  * Hide call UI
+//  */
+// function hideCallUI() {
+//     endCallBtn.style.display = "none";
+//     console.log('✅ Call UI hidden');
+// }
+
+// // ============================================
+// // AUDIO STREAMING FOR TRANSCRIPTION
+// // ============================================
+
+// /**
+//  * Start streaming audio to backend for transcription
+//  * CRITICAL: Only call this AFTER the call is connected (after answer)
+//  */
+// function startAudioStreaming(stream) {
+//     if (!stream) {
+//         console.error('❌ No stream available for audio streaming');
+//         return;
+//     }
+
+//     // Stop existing audio streaming if any
+//     stopAudioStreaming();
+
+//     try {
+//         console.log('🎤 Starting audio streaming for transcription...');
+
+//         // Create audio context
+//         audioContext = new AudioContext({ sampleRate: 16000 });
+
+//         // Create media stream source
+//         const source = audioContext.createMediaStreamSource(stream);
+
+//         // Create script processor (4096 buffer size, 1 input channel, 1 output channel)
+//         processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+//         // Process audio
+//         processor.onaudioprocess = (e) => {
+//             const input = e.inputBuffer.getChannelData(0);
+//             const pcm16 = convertFloatToInt16(input);
+            
+//             // Send to backend
+//             socket.emit("audio-chunk", pcm16);
+//         };
+
+//         // Connect nodes
+//         source.connect(processor);
+//         processor.connect(audioContext.destination);
+
+//         console.log('✅ Audio streaming started (16kHz, 16-bit PCM)');
+
+//     } catch (error) {
+//         console.error('❌ Audio streaming error:', error);
+//     }
+// }
+
+// /**
+//  * Stop audio streaming
+//  */
+// function stopAudioStreaming() {
+//     if (processor) {
+//         processor.disconnect();
+//         processor = null;
+//         console.log('⏹️ Audio processor stopped');
+//     }
+
+//     if (audioContext) {
+//         audioContext.close();
+//         audioContext = null;
+//         console.log('⏹️ Audio context closed');
+//     }
+// }
+
+// // /**
+// //  * Convert Float32Array to Int16Array (PCM 16-bit)
+// //  */
+// // function convertFloatToInt16(float32Array) {
+// //     const int16Array = new Int16Array(float32Array.length);
+    
+// //     for (let i = 0; i < float32Array.length; i++) {
+// //         // Clamp value between -1 and 1
+// //         const s = Math.max(-1, Math.min(1, float32Array[i]));
+// //         // Convert to 16-bit integer
+// //         int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+// //     }
+    
+// //     return int16Array;
+// // }
+// /**
+//  * Convert Float32Array to Int16 PCM Buffer (16-bit little-endian)
+//  */
+// function convertFloatToInt16(float32Array) {
+//     const buffer = new ArrayBuffer(float32Array.length * 2); // 2 bytes per sample
+//     const view = new DataView(buffer);
+
+//     for (let i = 0; i < float32Array.length; i++) {
+//         let s = Math.max(-1, Math.min(1, float32Array[i]));
+//         view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true); // little-endian
+//     }
+
+//     return buffer; // return ArrayBuffer ready to send via socket
+// }
+
+
+// // ============================================
+// // INITIALIZE CAMERA AND MICROPHONE
+// // ============================================
+
+// /**
+//  * Start local video and audio
+//  */
+// async function startMyVideo() {
+//     try {
+//         console.log('🎥 Requesting camera and microphone access...');
+
+//         localStream = await navigator.mediaDevices.getUserMedia({
+//             audio: {
+//                 echoCancellation: true,
+//                 noiseSuppression: true,
+//                 autoGainControl: true,
+//                 sampleRate: 16000  // Match audio context sample rate
+//             },
+//             video: {
+//                 width: { ideal: 1280 },
+//                 height: { ideal: 720 },
+//                 facingMode: "user"
+//             }
+//         });
+
+//         // Display local video
+//         localVideo.srcObject = localStream;
+
+//         console.log('✅ Camera and microphone started');
+//         console.log('   Audio tracks:', localStream.getAudioTracks().length);
+//         console.log('   Video tracks:', localStream.getVideoTracks().length);
+
+//         // DO NOT START AUDIO STREAMING HERE
+//         // Audio streaming starts only when call connects (after answer)
+
+//     } catch (error) {
+//         console.error('❌ Camera/Microphone error:', error);
+//         alert('Failed to access camera/microphone. Please grant permissions and refresh.');
+//     }
+// }
+
+// // ============================================
+// // CLEANUP ON PAGE UNLOAD
+// // ============================================
+
+// window.addEventListener('beforeunload', () => {
+//     if (isInCall) {
+//         socket.emit("end-call", {
+//             from: username.value,
+//             to: currentCallUser
+//         });
+//     }
+
+//     stopAudioStreaming();
+
+//     if (localStream) {
+//         localStream.getTracks().forEach(track => track.stop());
+//     }
+
+//     if (peerConnection) {
+//         peerConnection.close();
+//     }
+// });
+
+// // ============================================
+// // START APPLICATION
+// // ============================================
+
+// // Initialize camera and microphone on page load
+// startMyVideo();
+
+// console.log('🚀 Application initialized');
+
+// // ============================================
+// // FLOW SUMMARY
+// // ============================================
+// /**
+//  * CORRECT FLOW:
+//  * 
+//  * 1. Page loads → startMyVideo() → Camera/Mic access granted
+//  *    - localStream created
+//  *    - localVideo displays camera
+//  *    - ❌ Audio streaming NOT started yet
+//  * 
+//  * 2. User enters username → Click "Create" → emit('join-user')
+//  *    - Server stores user
+//  *    - Receives user list
+//  * 
+//  * 3. User A clicks call on User B → startCall()
+//  *    - Create peer connection
+//  *    - Create offer
+//  *    - emit('offer', { from: A, to: B, offer })
+//  *    - ❌ Audio streaming NOT started yet
+//  * 
+//  * 4. User B receives offer → socket.on('offer')
+//  *    - User prompted to accept/reject
+//  *    - If accepted:
+//  *      - Create peer connection
+//  *      - Set remote description (offer)
+//  *      - Create answer
+//  *      - Set local description (answer)
+//  *      - emit('answer', { from: B, to: A, answer })
+//  *      - ✅ START AUDIO STREAMING for User B
+//  * 
+//  * 5. User A receives answer → socket.on('answer')
+//  *    - Set remote description (answer)
+//  *    - ✅ START AUDIO STREAMING for User A
+//  * 
+//  * 6. ICE candidates exchanged
+//  *    - Connection established
+//  * 
+//  * 7. Audio flows:
+//  *    - User A speaks → audio-chunk → Backend → Google STT → Transcription
+//  *    - User B speaks → audio-chunk → Backend → Google STT → Transcription
+//  * 
+//  * 8. AI moderation checks transcriptions
+//  *    - If personal info detected → socket.on('force-end-call')
+//  *    - Both users disconnected
+//  * 
+//  * 9. Normal end:
+//  *    - User clicks end call → emit('end-call')
+//  *    - Stop audio streaming
+//  *    - Close peer connection
+//  *    - Clear videos
+//  * 
+//  * KEY POINTS:
+//  * - ✅ Audio streaming starts AFTER answer (when call is connected)
+//  * - ✅ Each user has their own audio stream to backend
+//  * - ✅ Backend has separate Google STT stream per user
+//  * - ✅ AI moderation tracks who said what
+//  * - ✅ Force end affects both users
+//  */
