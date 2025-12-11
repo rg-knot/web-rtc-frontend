@@ -855,7 +855,7 @@ function startAudioStreaming(stream) {
             const pcm16 = convertFloatToInt16(input);
             
             // Send to backend
-            socket.emit("audio-chunk", pcm16.buffer);
+            socket.emit("audio-chunk", pcm16);
         };
 
         // Connect nodes
@@ -886,21 +886,36 @@ function stopAudioStreaming() {
     }
 }
 
+// /**
+//  * Convert Float32Array to Int16Array (PCM 16-bit)
+//  */
+// function convertFloatToInt16(float32Array) {
+//     const int16Array = new Int16Array(float32Array.length);
+    
+//     for (let i = 0; i < float32Array.length; i++) {
+//         // Clamp value between -1 and 1
+//         const s = Math.max(-1, Math.min(1, float32Array[i]));
+//         // Convert to 16-bit integer
+//         int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+//     }
+    
+//     return int16Array;
+// }
 /**
- * Convert Float32Array to Int16Array (PCM 16-bit)
+ * Convert Float32Array to Int16 PCM Buffer (16-bit little-endian)
  */
 function convertFloatToInt16(float32Array) {
-    const int16Array = new Int16Array(float32Array.length);
-    
+    const buffer = new ArrayBuffer(float32Array.length * 2); // 2 bytes per sample
+    const view = new DataView(buffer);
+
     for (let i = 0; i < float32Array.length; i++) {
-        // Clamp value between -1 and 1
-        const s = Math.max(-1, Math.min(1, float32Array[i]));
-        // Convert to 16-bit integer
-        int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        let s = Math.max(-1, Math.min(1, float32Array[i]));
+        view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true); // little-endian
     }
-    
-    return int16Array;
+
+    return buffer; // return ArrayBuffer ready to send via socket
 }
+
 
 // ============================================
 // INITIALIZE CAMERA AND MICROPHONE
