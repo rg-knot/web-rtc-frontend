@@ -70,11 +70,21 @@ const PeerConnection = (function () {
   
       pc.onicecandidate = (event) => {
         if (event.candidate) {
+          console.log("❄️ ICE GENERATED", {
+            type: event.candidate.type,
+            protocol: event.candidate.protocol,
+            address: event.candidate.address,
+            port: event.candidate.port,
+          });
+      
           socket.emit("webrtc-ice", {
             candidate: event.candidate,
           });
+        } else {
+          console.log("🧊 ICE GATHERING COMPLETE");
         }
       };
+      
   
       return pc;
     };
@@ -138,10 +148,16 @@ socket.on("peer-joined", async () => {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
   
+    console.log("📤 OFFER CREATED", {
+      type: offer.type,
+      sdpLength: offer.sdp.length,
+    });
+  
     socket.emit("webrtc-offer", {
       offer: pc.localDescription,
     });
   
+    console.log("📤 OFFER SENT");
     showCallUI();
   });
   
@@ -176,6 +192,11 @@ async function flushCandidates() {
 // WEBRTC SIGNALING
 // ==========================
 socket.on("webrtc-offer", async ({ offer }) => {
+    console.log("📥 OFFER RECEIVED", {
+      type: offer.type,
+      sdpLength: offer.sdp.length,
+    });
+  
     const pc = PeerConnection.getInstance();
   
     await pc.setRemoteDescription(offer);
@@ -183,23 +204,44 @@ socket.on("webrtc-offer", async ({ offer }) => {
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
   
+    console.log("📤 ANSWER CREATED", {
+      type: answer.type,
+      sdpLength: answer.sdp.length,
+    });
+  
     socket.emit("webrtc-answer", {
       answer: pc.localDescription,
     });
   
+    console.log("📤 ANSWER SENT");
     showCallUI();
   });
   
+  
   socket.on("webrtc-answer", async ({ answer }) => {
+    console.log("📥 ANSWER RECEIVED", {
+      type: answer.type,
+      sdpLength: answer.sdp.length,
+    });
+  
     const pc = PeerConnection.getInstance();
     await pc.setRemoteDescription(answer);
   });
   
+  
 
-socket.on("webrtc-ice", async ({ candidate }) => {
-  const pc = PeerConnection.getInstance();
-  await pc.addIceCandidate(new RTCIceCandidate(candidate));
-});
+  socket.on("webrtc-ice", async ({ candidate }) => {
+    console.log("📥 ICE RECEIVED", {
+      type: candidate.type,
+      protocol: candidate.protocol,
+      address: candidate.address,
+      port: candidate.port,
+    });
+  
+    const pc = PeerConnection.getInstance();
+    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+  });
+  
 
 
 function showCallUI() {
