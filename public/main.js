@@ -43,25 +43,53 @@ const rtcConfig = {
 // ==========================
 // PEER CONNECTION
 // ==========================
-function createPeerConnection() {
-  const pc = new RTCPeerConnection(rtcConfig);
-
-  localStream.getTracks().forEach((track) =>
-    pc.addTrack(track, localStream)
-  );
-
-  pc.ontrack = (event) => {
-    remoteVideo.srcObject = event.streams[0];
-  };
-
-  pc.onicecandidate = (event) => {
-    if (event.candidate) {
-      socket.emit("webrtc-ice", { candidate: event.candidate });
-    }
-  };
-
-  return pc;
-}
+const PeerConnection = (function () {
+    let peerConnection = null;
+  
+    const createPeerConnection = () => {
+      const config = {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          {
+            urls: "turn:34.131.190.182:3478",
+            username: "webrtc_user",
+            credential: "webrtc_pass",
+          },
+        ],
+      };
+  
+      const pc = new RTCPeerConnection(config);
+  
+      localStream.getTracks().forEach(track =>
+        pc.addTrack(track, localStream)
+      );
+  
+      pc.ontrack = (event) => {
+        remoteVideo.srcObject = event.streams[0];
+      };
+  
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("webrtc-ice", {
+            candidate: event.candidate,
+          });
+        }
+      };
+  
+      return pc;
+    };
+  
+    return {
+      getInstance: () => {
+        if (!peerConnection) peerConnection = createPeerConnection();
+        return peerConnection;
+      },
+      reset: () => {
+        peerConnection = null;
+      },
+    };
+  })();
+  
 
 // ==========================
 // MEDIA
@@ -105,26 +133,37 @@ socket.on("meeting-waiting", () => {
 });
 
 socket.on("peer-joined", async () => {
-  statusText.innerText = "User joined. Connecting…";
+    const pc = PeerConnection.getInstance();
+  
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+  
+    socket.emit("webrtc-offer", {
+      offer: pc.localDescription,
+    });
+  
+    showCallUI();
+  });
+  
 
-  peerConnection = createPeerConnection();
+// socket.on("peer-left", () => {
+//   statusText.innerText = "Other user left the meeting.";
+//   cleanup();
+// });
 
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-
-  socket.emit("webrtc-offer", { offer });
-  endCallBtn.style.display = "block";
-});
+// socket.on("meeting-ended", ({ reason }) => {
+//   statusText.innerText = `Meeting ended (${reason})`;
+//   cleanup();
+// });
 
 socket.on("peer-left", () => {
-  statusText.innerText = "Other user left the meeting.";
-  cleanup();
-});
-
-socket.on("meeting-ended", ({ reason }) => {
-  statusText.innerText = `Meeting ended (${reason})`;
-  cleanup();
-});
+    endCall(false);
+  });
+  
+  socket.on("meeting-ended", () => {
+    endCall(false);
+  });
+  
 
 async function flushCandidates() {
     for (const c of pendingCandidates) {
@@ -137,57 +176,76 @@ async function flushCandidates() {
 // WEBRTC SIGNALING
 // ==========================
 socket.on("webrtc-offer", async ({ offer }) => {
-  peerConnection = createPeerConnection();
-  await peerConnection.setRemoteDescription(offer);
-  flushCandidates()
-
-  const answer = await peerConnection.createAnswer();
-  await peerConnection.setLocalDescription(answer);
-
-  socket.emit("webrtc-answer", { answer });
-  endCallBtn.style.display = "block";
-});
-
-socket.on("webrtc-answer", async ({ answer }) => {
-  await peerConnection.setRemoteDescription(answer);
-  flushCandidates()
-});
+    const pc = PeerConnection.getInstance();
+  
+    await pc.setRemoteDescription(offer);
+  
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+  
+    socket.emit("webrtc-answer", {
+      answer: pc.localDescription,
+    });
+  
+    showCallUI();
+  });
+  
+  socket.on("webrtc-answer", async ({ answer }) => {
+    const pc = PeerConnection.getInstance();
+    await pc.setRemoteDescription(answer);
+  });
+  
 
 socket.on("webrtc-ice", async ({ candidate }) => {
-    if (!peerConnection || !peerConnection.remoteDescription) {
-      pendingCandidates.push(candidate);
-      return;
-    }
-    await peerConnection.addIceCandidate(candidate);
-  });
+  const pc = PeerConnection.getInstance();
+  await pc.addIceCandidate(new RTCIceCandidate(candidate));
+});
+
+
+function showCallUI() {
+    const endBtn = document.getElementById("end-call-btn");
+    endBtn.style.display = "block";
+}
+
+function hideCallUI() {
+    const endBtn = document.getElementById("end-call-btn");
+    endBtn.style.display = "none";
+
+    // Stop showing videos
+    const remoteVideo = document.getElementById("remoteVideo");
+    const localVideo = document.getElementById("localVideo");
+
+    remoteVideo.srcObject = null;
+    localVideo.srcObject = null;
+}
 
 // ==========================
 // END CALL
 // ==========================
-endCallBtn.addEventListener("click", () => {
-  socket.emit("end-call");
-  cleanup();
-});
+// endCallBtn.addEventListener("click", () => {
+//   socket.emit("end-call");
+//   cleanup();
+// });
 
 // ==========================
 // CLEANUP
 // ==========================
-function cleanup() {
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
+// function cleanup() {
+//   if (peerConnection) {
+//     peerConnection.close();
+//     peerConnection = null;
+//   }
 
-  if (localStream) {
-    localStream.getTracks().forEach((t) => t.stop());
-    localStream = null;
-  }
+//   if (localStream) {
+//     localStream.getTracks().forEach((t) => t.stop());
+//     localStream = null;
+//   }
 
-  localVideo.srcObject = null;
-  remoteVideo.srcObject = null;
-  endCallBtn.style.display = "none";
-  joinBtn.disabled = false;
-}
+//   localVideo.srcObject = null;
+//   remoteVideo.srcObject = null;
+//   endCallBtn.style.display = "none";
+//   joinBtn.disabled = false;
+// }
 
 
 
