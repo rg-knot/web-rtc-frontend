@@ -721,7 +721,7 @@ function startAudioStreaming(stream) {
         processor.onaudioprocess = (e) => {
             const input = e.inputBuffer.getChannelData(0);
             const pcm16 = convertFloatToInt16(input);
-            socket.emit("audio-chunk", pcm16);
+            // socket.emit("audio-chunk", pcm16);
         };
 
         source.connect(processor);
