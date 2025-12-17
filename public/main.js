@@ -153,7 +153,7 @@ socket.on("webrtc-answer", async ({ answer }) => {
   flushCandidates()
 });
 
-ssocket.on("webrtc-ice", async ({ candidate }) => {
+socket.on("webrtc-ice", async ({ candidate }) => {
     if (!peerConnection || !peerConnection.remoteDescription) {
       pendingCandidates.push(candidate);
       return;
