@@ -30,6 +30,11 @@ let peerConnection = null;
 const rtcConfig = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
+    {
+        urls: "turn:34.131.190.182:3478",
+        username: "webrtc_user",
+        credential: "webrtc_pass"
+    }
   ],
 };
 
