@@ -333,6 +333,13 @@
 
 // working code with logs
 
+const createUserBtn = document.getElementById("create-user");
+const username = document.getElementById("username");
+const allusersHtml = document.getElementById("allusers");
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+const endCallBtn = document.getElementById("end-call-btn");
+
 const socket = io("https://webrtc-test.knot.dating", {
     transports: ["websocket", "polling"]
 });
