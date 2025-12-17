@@ -78,8 +78,9 @@ const PeerConnection = (function () {
           });
       
           socket.emit("webrtc-ice", {
-            candidate: event.candidate,
-          });
+            candidate: event.candidate.toJSON(),
+          });          
+          
         } else {
           console.log("🧊 ICE GATHERING COMPLETE");
         }
