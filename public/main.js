@@ -375,6 +375,7 @@ const PeerConnection = (function () {
         // Log ICE candidates
         pc.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log(`[ICE Candidate] type: ${event.candidate.candidate.split(" ")[7]} | candidate:`, event.candidate.candidate);
                 console.log(`[${new Date().toISOString()}] ICE candidate generated:`, event.candidate);
                 socket.emit("icecandidate", {
                     candidate: event.candidate,
