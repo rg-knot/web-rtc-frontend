@@ -1,266 +1,266 @@
-// ==========================
-// DOM
-// ==========================
-const meetingInput = document.getElementById("meetingIdInput");
-const userInput = document.getElementById("userIdInput");
-const joinBtn = document.getElementById("joinBtn");
-const localVideo = document.getElementById("localVideo");
-const remoteVideo = document.getElementById("remoteVideo");
-const endCallBtn = document.getElementById("end-call-btn");
-const statusText = document.getElementById("status-text");
+// // ==========================
+// // DOM
+// // ==========================
+// const meetingInput = document.getElementById("meetingIdInput");
+// const userInput = document.getElementById("userIdInput");
+// const joinBtn = document.getElementById("joinBtn");
+// const localVideo = document.getElementById("localVideo");
+// const remoteVideo = document.getElementById("remoteVideo");
+// const endCallBtn = document.getElementById("end-call-btn");
+// const statusText = document.getElementById("status-text");
 
-let pendingCandidates = [];
+// let pendingCandidates = [];
 
-// ==========================
-// SOCKET
-// ==========================
-const socket = io("https://webrtc-test.knot.dating", {
-  transports: ["websocket", "polling"],
-});
+// // ==========================
+// // SOCKET
+// // ==========================
+// const socket = io("https://webrtc-test.knot.dating", {
+//   transports: ["websocket", "polling"],
+// });
 
-// ==========================
-// STATE
-// ==========================
-let meetingId = null;
-let userId = null;
-let localStream = null;
-let peerConnection = null;
+// // ==========================
+// // STATE
+// // ==========================
+// let meetingId = null;
+// let userId = null;
+// let localStream = null;
+// let peerConnection = null;
 
-// ==========================
-// WEBRTC CONFIG
-// ==========================
-const rtcConfig = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    {
-        urls: "turn:34.131.190.182:3478",
-        username: "webrtc_user",
-        credential: "webrtc_pass"
-    }
-  ],
-};
+// // ==========================
+// // WEBRTC CONFIG
+// // ==========================
+// const rtcConfig = {
+//   iceServers: [
+//     { urls: "stun:stun.l.google.com:19302" },
+//     {
+//         urls: "turn:34.131.190.182:3478",
+//         username: "webrtc_user",
+//         credential: "webrtc_pass"
+//     }
+//   ],
+// };
 
-// ==========================
-// PEER CONNECTION
-// ==========================
-const PeerConnection = (function () {
-    let peerConnection = null;
+// // ==========================
+// // PEER CONNECTION
+// // ==========================
+// const PeerConnection = (function () {
+//     let peerConnection = null;
   
-    const createPeerConnection = () => {
-      const config = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          {
-            urls: "turn:34.131.190.182:3478",
-            username: "webrtc_user",
-            credential: "webrtc_pass",
-          },
-        ],
-      };
+//     const createPeerConnection = () => {
+//       const config = {
+//         iceServers: [
+//           { urls: "stun:stun.l.google.com:19302" },
+//           {
+//             urls: "turn:34.131.190.182:3478",
+//             username: "webrtc_user",
+//             credential: "webrtc_pass",
+//           },
+//         ],
+//       };
   
-      const pc = new RTCPeerConnection(config);
+//       const pc = new RTCPeerConnection(config);
   
-      localStream.getTracks().forEach(track =>
-        pc.addTrack(track, localStream)
-      );
+//       localStream.getTracks().forEach(track =>
+//         pc.addTrack(track, localStream)
+//       );
   
-      pc.ontrack = (event) => {
-        remoteVideo.srcObject = event.streams[0];
-      };
+//       pc.ontrack = (event) => {
+//         remoteVideo.srcObject = event.streams[0];
+//       };
   
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log("❄️ ICE GENERATED", {
-            type: event.candidate.type,
-            protocol: event.candidate.protocol,
-            address: event.candidate.address,
-            port: event.candidate.port,
-          });
+//       pc.onicecandidate = (event) => {
+//         if (event.candidate) {
+//           console.log("❄️ ICE GENERATED", {
+//             type: event.candidate.type,
+//             protocol: event.candidate.protocol,
+//             address: event.candidate.address,
+//             port: event.candidate.port,
+//           });
       
-          socket.emit("webrtc-ice", {
-            candidate: event.candidate.toJSON(),
-          });          
+//           socket.emit("webrtc-ice", {
+//             candidate: event.candidate.toJSON(),
+//           });          
           
-        } else {
-          console.log("🧊 ICE GATHERING COMPLETE");
-        }
-      };
+//         } else {
+//           console.log("🧊 ICE GATHERING COMPLETE");
+//         }
+//       };
       
   
-      return pc;
-    };
+//       return pc;
+//     };
   
-    return {
-      getInstance: () => {
-        if (!peerConnection) peerConnection = createPeerConnection();
-        return peerConnection;
-      },
-      reset: () => {
-        peerConnection = null;
-      },
-    };
-  })();
+//     return {
+//       getInstance: () => {
+//         if (!peerConnection) peerConnection = createPeerConnection();
+//         return peerConnection;
+//       },
+//       reset: () => {
+//         peerConnection = null;
+//       },
+//     };
+//   })();
   
 
-// ==========================
-// MEDIA
-// ==========================
-async function startMedia() {
-  localStream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video: true,
-  });
-  localVideo.srcObject = localStream;
-}
+// // ==========================
+// // MEDIA
+// // ==========================
+// async function startMedia() {
+//   localStream = await navigator.mediaDevices.getUserMedia({
+//     audio: true,
+//     video: true,
+//   });
+//   localVideo.srcObject = localStream;
+// }
 
-// ==========================
-// JOIN FLOW
-// ==========================
-joinBtn.addEventListener("click", async () => {
-  meetingId = meetingInput.value.trim();
-  userId = userInput.value.trim();
+// // ==========================
+// // JOIN FLOW
+// // ==========================
+// joinBtn.addEventListener("click", async () => {
+//   meetingId = meetingInput.value.trim();
+//   userId = userInput.value.trim();
 
-  if (!meetingId || !userId) {
-    alert("Enter meetingId and userId");
-    return;
-  }
+//   if (!meetingId || !userId) {
+//     alert("Enter meetingId and userId");
+//     return;
+//   }
 
-  await startMedia();
+//   await startMedia();
 
-  socket.emit("join-meeting", {
-    meetingId,
-    userId,
-  });
+//   socket.emit("join-meeting", {
+//     meetingId,
+//     userId,
+//   });
 
-  statusText.innerText = "Joining meeting...";
-  joinBtn.disabled = true;
-});
+//   statusText.innerText = "Joining meeting...";
+//   joinBtn.disabled = true;
+// });
 
-// ==========================
-// MEETING EVENTS
-// ==========================
-socket.on("meeting-waiting", () => {
-  statusText.innerText = "Waiting for other user to join…";
-});
+// // ==========================
+// // MEETING EVENTS
+// // ==========================
+// socket.on("meeting-waiting", () => {
+//   statusText.innerText = "Waiting for other user to join…";
+// });
 
-socket.on("peer-joined", async () => {
-    const pc = PeerConnection.getInstance();
+// socket.on("peer-joined", async () => {
+//     const pc = PeerConnection.getInstance();
   
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
+//     const offer = await pc.createOffer();
+//     await pc.setLocalDescription(offer);
   
-    console.log("📤 OFFER CREATED", {
-      type: offer.type,
-      sdpLength: offer.sdp.length,
-    });
+//     console.log("📤 OFFER CREATED", {
+//       type: offer.type,
+//       sdpLength: offer.sdp.length,
+//     });
   
-    socket.emit("webrtc-offer", {
-      offer: pc.localDescription,
-    });
+//     socket.emit("webrtc-offer", {
+//       offer: pc.localDescription,
+//     });
   
-    console.log("📤 OFFER SENT");
-    showCallUI();
-  });
+//     console.log("📤 OFFER SENT");
+//     showCallUI();
+//   });
   
+
+// // socket.on("peer-left", () => {
+// //   statusText.innerText = "Other user left the meeting.";
+// //   cleanup();
+// // });
+
+// // socket.on("meeting-ended", ({ reason }) => {
+// //   statusText.innerText = `Meeting ended (${reason})`;
+// //   cleanup();
+// // });
 
 // socket.on("peer-left", () => {
-//   statusText.innerText = "Other user left the meeting.";
-//   cleanup();
-// });
-
-// socket.on("meeting-ended", ({ reason }) => {
-//   statusText.innerText = `Meeting ended (${reason})`;
-//   cleanup();
-// });
-
-socket.on("peer-left", () => {
-    endCall(false);
-  });
+//     endCall(false);
+//   });
   
-  socket.on("meeting-ended", () => {
-    endCall(false);
-  });
+//   socket.on("meeting-ended", () => {
+//     endCall(false);
+//   });
   
 
-async function flushCandidates() {
-    for (const c of pendingCandidates) {
-      await peerConnection.addIceCandidate(c);
-    }
-    pendingCandidates = [];
-  }
+// async function flushCandidates() {
+//     for (const c of pendingCandidates) {
+//       await peerConnection.addIceCandidate(c);
+//     }
+//     pendingCandidates = [];
+//   }
 
-// ==========================
-// WEBRTC SIGNALING
-// ==========================
-socket.on("webrtc-offer", async ({ offer }) => {
-    console.log("📥 OFFER RECEIVED", {
-      type: offer.type,
-      sdpLength: offer.sdp.length,
-    });
+// // ==========================
+// // WEBRTC SIGNALING
+// // ==========================
+// socket.on("webrtc-offer", async ({ offer }) => {
+//     console.log("📥 OFFER RECEIVED", {
+//       type: offer.type,
+//       sdpLength: offer.sdp.length,
+//     });
   
-    const pc = PeerConnection.getInstance();
+//     const pc = PeerConnection.getInstance();
   
-    await pc.setRemoteDescription(offer);
+//     await pc.setRemoteDescription(offer);
   
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
+//     const answer = await pc.createAnswer();
+//     await pc.setLocalDescription(answer);
   
-    console.log("📤 ANSWER CREATED", {
-      type: answer.type,
-      sdpLength: answer.sdp.length,
-    });
+//     console.log("📤 ANSWER CREATED", {
+//       type: answer.type,
+//       sdpLength: answer.sdp.length,
+//     });
   
-    socket.emit("webrtc-answer", {
-      answer: pc.localDescription,
-    });
+//     socket.emit("webrtc-answer", {
+//       answer: pc.localDescription,
+//     });
   
-    console.log("📤 ANSWER SENT");
-    showCallUI();
-  });
+//     console.log("📤 ANSWER SENT");
+//     showCallUI();
+//   });
   
   
-  socket.on("webrtc-answer", async ({ answer }) => {
-    console.log("📥 ANSWER RECEIVED", {
-      type: answer.type,
-      sdpLength: answer.sdp.length,
-    });
+//   socket.on("webrtc-answer", async ({ answer }) => {
+//     console.log("📥 ANSWER RECEIVED", {
+//       type: answer.type,
+//       sdpLength: answer.sdp.length,
+//     });
   
-    const pc = PeerConnection.getInstance();
-    await pc.setRemoteDescription(answer);
-  });
+//     const pc = PeerConnection.getInstance();
+//     await pc.setRemoteDescription(answer);
+//   });
   
   
 
-  socket.on("webrtc-ice", async ({ candidate }) => {
-    console.log("📥 ICE RECEIVED", {
-      type: candidate.type,
-      protocol: candidate.protocol,
-      address: candidate.address,
-      port: candidate.port,
-    });
+//   socket.on("webrtc-ice", async ({ candidate }) => {
+//     console.log("📥 ICE RECEIVED", {
+//       type: candidate.type,
+//       protocol: candidate.protocol,
+//       address: candidate.address,
+//       port: candidate.port,
+//     });
   
-    const pc = PeerConnection.getInstance();
-    await pc.addIceCandidate(new RTCIceCandidate(candidate));
-  });
+//     const pc = PeerConnection.getInstance();
+//     await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//   });
   
 
 
-function showCallUI() {
-    const endBtn = document.getElementById("end-call-btn");
-    endBtn.style.display = "block";
-}
+// function showCallUI() {
+//     const endBtn = document.getElementById("end-call-btn");
+//     endBtn.style.display = "block";
+// }
 
-function hideCallUI() {
-    const endBtn = document.getElementById("end-call-btn");
-    endBtn.style.display = "none";
+// function hideCallUI() {
+//     const endBtn = document.getElementById("end-call-btn");
+//     endBtn.style.display = "none";
 
-    // Stop showing videos
-    const remoteVideo = document.getElementById("remoteVideo");
-    const localVideo = document.getElementById("localVideo");
+//     // Stop showing videos
+//     const remoteVideo = document.getElementById("remoteVideo");
+//     const localVideo = document.getElementById("localVideo");
 
-    remoteVideo.srcObject = null;
-    localVideo.srcObject = null;
-}
+//     remoteVideo.srcObject = null;
+//     localVideo.srcObject = null;
+// }
 
 // ==========================
 // END CALL
