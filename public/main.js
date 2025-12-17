@@ -9,6 +9,8 @@ const remoteVideo = document.getElementById("remoteVideo");
 const endCallBtn = document.getElementById("end-call-btn");
 const statusText = document.getElementById("status-text");
 
+let pendingCandidates = [];
+
 // ==========================
 // SOCKET
 // ==========================
@@ -124,12 +126,20 @@ socket.on("meeting-ended", ({ reason }) => {
   cleanup();
 });
 
+async function flushCandidates() {
+    for (const c of pendingCandidates) {
+      await peerConnection.addIceCandidate(c);
+    }
+    pendingCandidates = [];
+  }
+
 // ==========================
 // WEBRTC SIGNALING
 // ==========================
 socket.on("webrtc-offer", async ({ offer }) => {
   peerConnection = createPeerConnection();
   await peerConnection.setRemoteDescription(offer);
+  flushCandidates()
 
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
@@ -140,13 +150,16 @@ socket.on("webrtc-offer", async ({ offer }) => {
 
 socket.on("webrtc-answer", async ({ answer }) => {
   await peerConnection.setRemoteDescription(answer);
+  flushCandidates()
 });
 
-socket.on("webrtc-ice", async ({ candidate }) => {
-  if (peerConnection) {
+ssocket.on("webrtc-ice", async ({ candidate }) => {
+    if (!peerConnection || !peerConnection.remoteDescription) {
+      pendingCandidates.push(candidate);
+      return;
+    }
     await peerConnection.addIceCandidate(candidate);
-  }
-});
+  });
 
 // ==========================
 // END CALL
