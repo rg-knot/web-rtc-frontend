@@ -1,5 +1,328 @@
+// // ==========================
+// // DOM
+// // ==========================
+// const meetingInput = document.getElementById("meetingIdInput");
+// const userInput = document.getElementById("userIdInput");
+// const joinBtn = document.getElementById("joinBtn");
+// const localVideo = document.getElementById("localVideo");
+// const remoteVideo = document.getElementById("remoteVideo");
+// const endCallBtn = document.getElementById("end-call-btn");
+// const statusText = document.getElementById("status-text");
+
+// let pendingCandidates = [];
+
+// // ==========================
+// // SOCKET
+// // ==========================
+// const socket = io("https://webrtc-test.knot.dating", {
+//   transports: ["websocket", "polling"],
+// });
+
+// // ==========================
+// // STATE
+// // ==========================
+// let meetingId = null;
+// let userId = null;
+// let localStream = null;
+// let peerConnection = null;
+
+// // ==========================
+// // WEBRTC CONFIG
+// // ==========================
+// const rtcConfig = {
+//   iceServers: [
+//     { urls: "stun:stun.l.google.com:19302" },
+//     {
+//         urls: "turn:34.131.190.182:3478",
+//         username: "webrtc_user",
+//         credential: "webrtc_pass"
+//     }
+//   ],
+// };
+
+// // ==========================
+// // PEER CONNECTION
+// // ==========================
+// const PeerConnection = (function () {
+//     let peerConnection = null;
+  
+//     const createPeerConnection = () => {
+//       const config = {
+//         iceServers: [
+//           { urls: "stun:stun.l.google.com:19302" },
+//           {
+//             urls: "turn:34.131.109.208:3478",
+//             username: "webrtc_user",
+//             credential: "webrtc_pass"
+//           }
+//         ],
+//       };
+  
+//       const pc = new RTCPeerConnection(config);
+  
+//       localStream.getTracks().forEach(track =>
+//         pc.addTrack(track, localStream)
+//       );
+  
+//       pc.ontrack = (event) => {
+//         remoteVideo.srcObject = event.streams[0];
+//       };
+  
+//       pc.onicecandidate = (event) => {
+//         if (event.candidate) {
+//           console.log("❄️ ICE GENERATED", {
+//             type: event.candidate.type,
+//             protocol: event.candidate.protocol,
+//             address: event.candidate.address,
+//             port: event.candidate.port,
+//           });
+      
+//           socket.emit("webrtc-ice", {
+//             candidate: event.candidate.toJSON(),
+//           });          
+          
+//         } else {
+//           console.log("🧊 ICE GATHERING COMPLETE");
+//         }
+//       };
+      
+  
+//       return pc;
+//     };
+  
+//     return {
+//       getInstance: () => {
+//         if (!peerConnection) peerConnection = createPeerConnection();
+//         return peerConnection;
+//       },
+//       reset: () => {
+//         peerConnection = null;
+//       },
+//     };
+//   })();
+  
+
+// // ==========================
+// // MEDIA
+// // ==========================
+// async function startMedia() {
+//   localStream = await navigator.mediaDevices.getUserMedia({
+//     audio: true,
+//     video: true,
+//   });
+//   localVideo.srcObject = localStream;
+// }
+
+// // ==========================
+// // JOIN FLOW
+// // ==========================
+// joinBtn.addEventListener("click", async () => {
+//   meetingId = meetingInput.value.trim();
+//   userId = userInput.value.trim();
+
+//   if (!meetingId || !userId) {
+//     alert("Enter meetingId and userId");
+//     return;
+//   }
+
+//   await startMedia();
+
+//   socket.emit("join-meeting", {
+//     meetingId,
+//     userId,
+//   });
+
+//   statusText.innerText = "Joining meeting...";
+//   joinBtn.disabled = true;
+// });
+
+// // ==========================
+// // MEETING EVENTS
+// // ==========================
+// socket.on("meeting-waiting", () => {
+//   statusText.innerText = "Waiting for other user to join…";
+// });
+
+// socket.on("peer-joined", async () => {
+//     const pc = PeerConnection.getInstance();
+  
+//     const offer = await pc.createOffer();
+//     await pc.setLocalDescription(offer);
+  
+//     console.log("📤 OFFER CREATED", {
+//       type: offer.type,
+//       sdpLength: offer.sdp.length,
+//     });
+  
+//     socket.emit("webrtc-offer", {
+//       offer: pc.localDescription,
+//     });
+  
+//     console.log("📤 OFFER SENT");
+//     showCallUI();
+//   });
+  
+
+// // socket.on("peer-left", () => {
+// //   statusText.innerText = "Other user left the meeting.";
+// //   cleanup();
+// // });
+
+// // socket.on("meeting-ended", ({ reason }) => {
+// //   statusText.innerText = `Meeting ended (${reason})`;
+// //   cleanup();
+// // });
+
+// socket.on("peer-left", () => {
+//     endCall(false);
+//   });
+  
+//   socket.on("meeting-ended", () => {
+//     endCall(false);
+//   });
+  
+
+// async function flushCandidates() {
+//     for (const c of pendingCandidates) {
+//       await peerConnection.addIceCandidate(c);
+//     }
+//     pendingCandidates = [];
+//   }
+
+// // ==========================
+// // WEBRTC SIGNALING
+// // ==========================
+// socket.on("webrtc-offer", async ({ offer }) => {
+//     console.log("📥 OFFER RECEIVED", {
+//       type: offer.type,
+//       sdpLength: offer.sdp.length,
+//     });
+  
+//     const pc = PeerConnection.getInstance();
+  
+//     await pc.setRemoteDescription(offer);
+  
+//     const answer = await pc.createAnswer();
+//     await pc.setLocalDescription(answer);
+  
+//     console.log("📤 ANSWER CREATED", {
+//       type: answer.type,
+//       sdpLength: answer.sdp.length,
+//     });
+  
+//     socket.emit("webrtc-answer", {
+//       answer: pc.localDescription,
+//     });
+  
+//     console.log("📤 ANSWER SENT");
+//     showCallUI();
+//   });
+  
+  
+//   socket.on("webrtc-answer", async ({ answer }) => {
+//     console.log("📥 ANSWER RECEIVED", {
+//       type: answer.type,
+//       sdpLength: answer.sdp.length,
+//     });
+  
+//     const pc = PeerConnection.getInstance();
+//     await pc.setRemoteDescription(answer);
+//   });
+  
+  
+
+//   socket.on("webrtc-ice", async ({ candidate }) => {
+//     console.log("📥 ICE RECEIVED", {
+//       type: candidate.type,
+//       protocol: candidate.protocol,
+//       address: candidate.address,
+//       port: candidate.port,
+//     });
+  
+//     const pc = PeerConnection.getInstance();
+//     await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//   });
+  
+
+
+// function showCallUI() {
+//     const endBtn = document.getElementById("end-call-btn");
+//     endBtn.style.display = "block";
+// }
+
+// function hideCallUI() {
+//     const endBtn = document.getElementById("end-call-btn");
+//     endBtn.style.display = "none";
+
+//     // Stop showing videos
+//     const remoteVideo = document.getElementById("remoteVideo");
+//     const localVideo = document.getElementById("localVideo");
+
+//     remoteVideo.srcObject = null;
+//     localVideo.srcObject = null;
+// }
+
+// // ==========================
+// // END CALL
+// // ==========================
+// endCallBtn.addEventListener("click", () => {
+//   socket.emit("end-call");
+//   cleanup();
+// });
+
+// // ==========================
+// // CLEANUP
+// // ==========================
+// function cleanup() {
+//   if (peerConnection) {
+//     peerConnection.close();
+//     peerConnection = null;
+//   }
+
+//   if (localStream) {
+//     localStream.getTracks().forEach((t) => t.stop());
+//     localStream = null;
+//   }
+
+//   localVideo.srcObject = null;
+//   remoteVideo.srcObject = null;
+//   endCallBtn.style.display = "none";
+//   joinBtn.disabled = false;
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// UPDATED FRONTEND - Meeting with Transcription
+// ============================================
+
 // ==========================
-// DOM
+// DOM ELEMENTS
 // ==========================
 const meetingInput = document.getElementById("meetingIdInput");
 const userInput = document.getElementById("userIdInput");
@@ -9,10 +332,8 @@ const remoteVideo = document.getElementById("remoteVideo");
 const endCallBtn = document.getElementById("end-call-btn");
 const statusText = document.getElementById("status-text");
 
-let pendingCandidates = [];
-
 // ==========================
-// SOCKET
+// SOCKET CONNECTION
 // ==========================
 const socket = io("https://webrtc-test.knot.dating", {
   transports: ["websocket", "polling"],
@@ -25,6 +346,10 @@ let meetingId = null;
 let userId = null;
 let localStream = null;
 let peerConnection = null;
+let audioContext = null;
+let processor = null;
+let isInMeeting = false;
+let isAudioStreamingActive = false;
 
 // ==========================
 // WEBRTC CONFIG
@@ -33,88 +358,327 @@ const rtcConfig = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     {
-        urls: "turn:34.131.190.182:3478",
-        username: "webrtc_user",
-        credential: "webrtc_pass"
-    }
+      urls: "turn:34.131.190.182:3478",
+      username: "webrtc_user",
+      credential: "webrtc_pass",
+    },
   ],
 };
 
 // ==========================
+// SOCKET EVENT HANDLERS
+// ==========================
+socket.on("connect", () => {
+  console.log("✅ Socket connected:", socket.id);
+});
+
+socket.on("connect_error", (err) => {
+  console.error("❌ Socket connection error:", err);
+  alert("Connection error. Please check your internet.");
+});
+
+socket.on("disconnect", () => {
+  console.log("❌ Socket disconnected");
+  if (isInMeeting) {
+    cleanup();
+  }
+});
+
+// Meeting waiting
+socket.on("meeting-waiting", () => {
+  console.log("⏳ Waiting for other user...");
+  statusText.innerText = "Waiting for other user to join…";
+});
+
+// Peer joined
+socket.on("peer-joined", async () => {
+  console.log("👥 Peer joined, creating offer...");
+  statusText.innerText = "Peer joined. Connecting...";
+
+  const pc = getPeerConnection();
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  console.log("📤 OFFER CREATED", {
+    type: offer.type,
+    sdpLength: offer.sdp.length,
+  });
+
+  socket.emit("webrtc-offer", {
+    offer: pc.localDescription,
+  });
+
+  console.log("📤 OFFER SENT");
+  showCallUI();
+});
+
+// Peer left
+socket.on("peer-left", () => {
+  console.log("❌ Peer left");
+  statusText.innerText = "Other user left the meeting.";
+  cleanup();
+});
+
+// Meeting ended (normal)
+socket.on("meeting-ended", ({ reason }) => {
+  console.log("📴 Meeting ended:", reason);
+  statusText.innerText = `Meeting ended (${reason})`;
+  cleanup();
+});
+
+// Meeting force-ended (AI moderation)
+socket.on("force-end-meeting", ({ reason, timestamp }) => {
+  console.warn("🚨 Meeting force-ended:", reason);
+  alert(`⚠️ Meeting ended: ${reason}`);
+  statusText.innerText = `Meeting ended: ${reason}`;
+  cleanup();
+});
+
+// WebRTC Offer received
+socket.on("webrtc-offer", async ({ offer }) => {
+  console.log("📥 OFFER RECEIVED", {
+    type: offer.type,
+    sdpLength: offer.sdp.length,
+  });
+
+  const pc = getPeerConnection();
+
+  await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  console.log("📤 ANSWER CREATED", {
+    type: answer.type,
+    sdpLength: answer.sdp.length,
+  });
+
+  socket.emit("webrtc-answer", {
+    answer: pc.localDescription,
+  });
+
+  console.log("📤 ANSWER SENT");
+
+  // ✅ START AUDIO STREAMING when answer is sent
+  startAudioStreaming(localStream);
+
+  showCallUI();
+});
+
+// WebRTC Answer received
+socket.on("webrtc-answer", async ({ answer }) => {
+  console.log("📥 ANSWER RECEIVED", {
+    type: answer.type,
+    sdpLength: answer.sdp.length,
+  });
+
+  const pc = getPeerConnection();
+  await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+  // ✅ START AUDIO STREAMING when answer is received
+  startAudioStreaming(localStream);
+
+  statusText.innerText = "Connected!";
+});
+
+// ICE Candidate received
+socket.on("webrtc-ice", async ({ candidate }) => {
+  console.log("📥 ICE RECEIVED", {
+    type: candidate.type,
+    protocol: candidate.protocol,
+    address: candidate.address,
+    port: candidate.port,
+  });
+
+  const pc = getPeerConnection();
+  await pc.addIceCandidate(new RTCIceCandidate(candidate));
+});
+
+// Transcription received (optional - for display)
+socket.on("transcription", ({ userId: speaker, text, timestamp }) => {
+  console.log(`📝 [${speaker}]:`, text);
+  // You can display this in UI if needed
+  // Example: Add to a chat-like display
+});
+
+// ==========================
 // PEER CONNECTION
 // ==========================
-const PeerConnection = (function () {
-    let peerConnection = null;
-  
-    const createPeerConnection = () => {
-      const config = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          {
-            urls: "turn:34.131.109.208:3478",
-            username: "webrtc_user",
-            credential: "webrtc_pass"
-          }
-        ],
-      };
-  
-      const pc = new RTCPeerConnection(config);
-  
-      localStream.getTracks().forEach(track =>
-        pc.addTrack(track, localStream)
-      );
-  
-      pc.ontrack = (event) => {
-        remoteVideo.srcObject = event.streams[0];
-      };
-  
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log("❄️ ICE GENERATED", {
-            type: event.candidate.type,
-            protocol: event.candidate.protocol,
-            address: event.candidate.address,
-            port: event.candidate.port,
-          });
-      
-          socket.emit("webrtc-ice", {
-            candidate: event.candidate.toJSON(),
-          });          
-          
-        } else {
-          console.log("🧊 ICE GATHERING COMPLETE");
-        }
-      };
-      
-  
-      return pc;
-    };
-  
-    return {
-      getInstance: () => {
-        if (!peerConnection) peerConnection = createPeerConnection();
-        return peerConnection;
-      },
-      reset: () => {
-        peerConnection = null;
-      },
-    };
-  })();
-  
+function getPeerConnection() {
+  if (peerConnection) {
+    return peerConnection;
+  }
+
+  console.log("🔗 Creating peer connection...");
+
+  peerConnection = new RTCPeerConnection(rtcConfig);
+
+  // Add local stream tracks
+  if (localStream) {
+    localStream.getTracks().forEach((track) => {
+      peerConnection.addTrack(track, localStream);
+      console.log(`➕ Added ${track.kind} track`);
+    });
+  }
+
+  // Handle incoming tracks
+  peerConnection.ontrack = (event) => {
+    console.log("📺 Received remote track:", event.track.kind);
+    remoteVideo.srcObject = event.streams[0];
+    statusText.innerText = "Call connected!";
+  };
+
+  // Handle ICE candidates
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      console.log("❄️ ICE GENERATED", {
+        type: event.candidate.type,
+        protocol: event.candidate.protocol,
+        address: event.candidate.address,
+        port: event.candidate.port,
+      });
+
+      socket.emit("webrtc-ice", {
+        candidate: event.candidate.toJSON(),
+      });
+    } else {
+      console.log("🧊 ICE GATHERING COMPLETE");
+    }
+  };
+
+  // Handle connection state
+  peerConnection.onconnectionstatechange = () => {
+    console.log("🔗 Connection state:", peerConnection.connectionState);
+
+    if (
+      peerConnection.connectionState === "disconnected" ||
+      peerConnection.connectionState === "failed" ||
+      peerConnection.connectionState === "closed"
+    ) {
+      console.log("Connection lost");
+      cleanup();
+    }
+  };
+
+  return peerConnection;
+}
 
 // ==========================
 // MEDIA
 // ==========================
 async function startMedia() {
-  localStream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video: true,
-  });
-  localVideo.srcObject = localStream;
+  try {
+    console.log("🎥 Requesting camera and microphone...");
+
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 16000, // Match backend
+      },
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: "user",
+      },
+    });
+
+    localVideo.srcObject = localStream;
+
+    console.log("✅ Camera and microphone started");
+    console.log("   Audio tracks:", localStream.getAudioTracks().length);
+    console.log("   Video tracks:", localStream.getVideoTracks().length);
+
+    // ❌ DO NOT START AUDIO STREAMING HERE
+    // It will start after WebRTC connection is established
+
+  } catch (error) {
+    console.error("❌ Media error:", error);
+    alert("Failed to access camera/microphone. Please grant permissions.");
+    throw error;
+  }
 }
 
 // ==========================
-// JOIN FLOW
+// AUDIO STREAMING FOR TRANSCRIPTION
+// ==========================
+function startAudioStreaming(stream) {
+  if (!stream) {
+    console.error("❌ No stream available for audio streaming");
+    return;
+  }
+
+  if (isAudioStreamingActive) {
+    console.log("ℹ️ Audio streaming already active");
+    return;
+  }
+
+  try {
+    console.log("🎤 Starting audio streaming for transcription...");
+
+    // Create audio context
+    audioContext = new AudioContext({ sampleRate: 16000 });
+
+    // Create media stream source
+    const source = audioContext.createMediaStreamSource(stream);
+
+    // Create script processor
+    processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+    // Process audio
+    processor.onaudioprocess = (e) => {
+      const input = e.inputBuffer.getChannelData(0);
+      const pcm16 = convertFloatToInt16(input);
+
+      // Send to backend
+      socket.emit("audio-chunk", pcm16.buffer);
+    };
+
+    // Connect nodes
+    source.connect(processor);
+    processor.connect(audioContext.destination);
+
+    isAudioStreamingActive = true;
+
+    console.log(`✅ Audio streaming started (16kHz, 16-bit PCM)`);
+    console.log(`   Timestamp: ${new Date().toISOString()}`);
+
+  } catch (err) {
+    console.error(`❌ Audio streaming error:`, err);
+  }
+}
+
+function stopAudioStreaming() {
+  if (processor) {
+    processor.disconnect();
+    processor = null;
+    console.log("⏹️ Audio processor stopped");
+  }
+
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+    console.log("⏹️ Audio context closed");
+  }
+
+  isAudioStreamingActive = false;
+}
+
+function convertFloatToInt16(float32Array) {
+  const int16Array = new Int16Array(float32Array.length);
+
+  for (let i = 0; i < float32Array.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32Array[i]));
+    int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+
+  return int16Array;
+}
+
+// ==========================
+// JOIN MEETING
 // ==========================
 joinBtn.addEventListener("click", async () => {
   meetingId = meetingInput.value.trim();
@@ -125,189 +689,180 @@ joinBtn.addEventListener("click", async () => {
     return;
   }
 
-  await startMedia();
+  try {
+    console.log(`📞 Joining meeting: ${meetingId} as ${userId}`);
 
-  socket.emit("join-meeting", {
-    meetingId,
-    userId,
-  });
+    // Start camera and microphone
+    await startMedia();
 
-  statusText.innerText = "Joining meeting...";
-  joinBtn.disabled = true;
-});
-
-// ==========================
-// MEETING EVENTS
-// ==========================
-socket.on("meeting-waiting", () => {
-  statusText.innerText = "Waiting for other user to join…";
-});
-
-socket.on("peer-joined", async () => {
-    const pc = PeerConnection.getInstance();
-  
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-  
-    console.log("📤 OFFER CREATED", {
-      type: offer.type,
-      sdpLength: offer.sdp.length,
+    // Join meeting
+    socket.emit("join-meeting", {
+      meetingId,
+      userId,
     });
-  
-    socket.emit("webrtc-offer", {
-      offer: pc.localDescription,
-    });
-  
-    console.log("📤 OFFER SENT");
-    showCallUI();
-  });
-  
 
-// socket.on("peer-left", () => {
-//   statusText.innerText = "Other user left the meeting.";
-//   cleanup();
-// });
+    isInMeeting = true;
+    statusText.innerText = "Joining meeting...";
+    joinBtn.disabled = true;
 
-// socket.on("meeting-ended", ({ reason }) => {
-//   statusText.innerText = `Meeting ended (${reason})`;
-//   cleanup();
-// });
-
-socket.on("peer-left", () => {
-    endCall(false);
-  });
-  
-  socket.on("meeting-ended", () => {
-    endCall(false);
-  });
-  
-
-async function flushCandidates() {
-    for (const c of pendingCandidates) {
-      await peerConnection.addIceCandidate(c);
-    }
-    pendingCandidates = [];
+  } catch (error) {
+    console.error("❌ Failed to join meeting:", error);
+    alert("Failed to join meeting");
   }
-
-// ==========================
-// WEBRTC SIGNALING
-// ==========================
-socket.on("webrtc-offer", async ({ offer }) => {
-    console.log("📥 OFFER RECEIVED", {
-      type: offer.type,
-      sdpLength: offer.sdp.length,
-    });
-  
-    const pc = PeerConnection.getInstance();
-  
-    await pc.setRemoteDescription(offer);
-  
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-  
-    console.log("📤 ANSWER CREATED", {
-      type: answer.type,
-      sdpLength: answer.sdp.length,
-    });
-  
-    socket.emit("webrtc-answer", {
-      answer: pc.localDescription,
-    });
-  
-    console.log("📤 ANSWER SENT");
-    showCallUI();
-  });
-  
-  
-  socket.on("webrtc-answer", async ({ answer }) => {
-    console.log("📥 ANSWER RECEIVED", {
-      type: answer.type,
-      sdpLength: answer.sdp.length,
-    });
-  
-    const pc = PeerConnection.getInstance();
-    await pc.setRemoteDescription(answer);
-  });
-  
-  
-
-  socket.on("webrtc-ice", async ({ candidate }) => {
-    console.log("📥 ICE RECEIVED", {
-      type: candidate.type,
-      protocol: candidate.protocol,
-      address: candidate.address,
-      port: candidate.port,
-    });
-  
-    const pc = PeerConnection.getInstance();
-    await pc.addIceCandidate(new RTCIceCandidate(candidate));
-  });
-  
-
-
-function showCallUI() {
-    const endBtn = document.getElementById("end-call-btn");
-    endBtn.style.display = "block";
-}
-
-function hideCallUI() {
-    const endBtn = document.getElementById("end-call-btn");
-    endBtn.style.display = "none";
-
-    // Stop showing videos
-    const remoteVideo = document.getElementById("remoteVideo");
-    const localVideo = document.getElementById("localVideo");
-
-    remoteVideo.srcObject = null;
-    localVideo.srcObject = null;
-}
+});
 
 // ==========================
 // END CALL
 // ==========================
 endCallBtn.addEventListener("click", () => {
+  console.log("📵 User clicked end call");
   socket.emit("end-call");
   cleanup();
 });
 
 // ==========================
+// UI HELPERS
+// ==========================
+function showCallUI() {
+  endCallBtn.style.display = "block";
+  console.log("✅ Call UI shown");
+}
+
+function hideCallUI() {
+  endCallBtn.style.display = "none";
+  remoteVideo.srcObject = null;
+  console.log("✅ Call UI hidden");
+}
+
+// ==========================
 // CLEANUP
 // ==========================
 function cleanup() {
+  console.log("🧹 Cleaning up...");
+
+  // Stop audio streaming
+  stopAudioStreaming();
+
+  // Close peer connection
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
+    console.log("✅ Peer connection closed");
   }
 
+  // Stop local stream
   if (localStream) {
     localStream.getTracks().forEach((t) => t.stop());
     localStream = null;
+    console.log("✅ Local stream stopped");
   }
 
+  // Clear videos
   localVideo.srcObject = null;
   remoteVideo.srcObject = null;
-  endCallBtn.style.display = "none";
+
+  // Reset UI
+  hideCallUI();
   joinBtn.disabled = false;
+
+  // Reset state
+  isInMeeting = false;
+  isAudioStreamingActive = false;
+
+  console.log("✅ Cleanup complete");
 }
 
+// ==========================
+// CLEANUP ON PAGE UNLOAD
+// ==========================
+window.addEventListener("beforeunload", () => {
+  if (isInMeeting) {
+    socket.emit("end-call");
+    cleanup();
+  }
+});
 
+// ==========================
+// DEBUG HELPER
+// ==========================
+window.debugMeeting = {
+  getMeetingInfo: () => {
+    socket.emit("get-meeting-info", {}, (response) => {
+      console.log("Meeting Info:", response);
+    });
+  },
+  checkAudioStreaming: () => {
+    console.log("Audio Context:", audioContext);
+    console.log("Processor:", processor);
+    console.log("Is Active:", isAudioStreamingActive);
+  },
+  testAudioChunk: () => {
+    const testChunk = new Int16Array(4096);
+    socket.emit("audio-chunk", testChunk.buffer);
+    console.log("Test audio chunk sent");
+  },
+};
 
+console.log("🚀 Application initialized");
+console.log("Debug: window.debugMeeting available");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ============================================
+// FLOW SUMMARY
+// ============================================
+/**
+ * COMPLETE FLOW:
+ *
+ * 1. Page loads → Camera/Mic NOT started yet
+ *
+ * 2. User enters meetingId and userId → Click "Join"
+ *    - startMedia() → Camera/Mic access granted
+ *    - localVideo displays camera
+ *    - emit('join-meeting')
+ *    - ❌ Audio streaming NOT started yet
+ *
+ * 3. If first user:
+ *    - Receives 'meeting-waiting'
+ *    - Waits for second user
+ *
+ * 4. Second user joins:
+ *    - First user receives 'peer-joined'
+ *    - First user creates offer
+ *    - emit('webrtc-offer')
+ *
+ * 5. Second user receives offer:
+ *    - socket.on('webrtc-offer')
+ *    - Creates answer
+ *    - emit('webrtc-answer')
+ *    - ✅ START AUDIO STREAMING (second user)
+ *
+ * 6. First user receives answer:
+ *    - socket.on('webrtc-answer')
+ *    - ✅ START AUDIO STREAMING (first user)
+ *
+ * 7. ICE candidates exchanged
+ *    - Connection established
+ *
+ * 8. Audio flows:
+ *    - User A: audio-chunk → Backend → Google STT → AI Check
+ *    - User B: audio-chunk → Backend → Google STT → AI Check
+ *
+ * 9. If personal info detected:
+ *    - Backend: force-end-meeting → Both users
+ *    - Frontend: Alert shown + cleanup
+ *
+ * 10. Normal end:
+ *     - User clicks end call → emit('end-call')
+ *     - Stop audio streaming
+ *     - Close peer connection
+ *     - Clear videos
+ *
+ * KEY POINTS:
+ * - ✅ Audio streaming starts AFTER WebRTC answer (when call is connected)
+ * - ✅ Each user has separate audio stream on backend
+ * - ✅ Backend tracks who said what
+ * - ✅ Force end affects ALL users in meeting
+ * - ✅ Proper cleanup on all scenarios
+ */
 
 
 
