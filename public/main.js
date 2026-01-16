@@ -335,7 +335,11 @@ const statusText = document.getElementById("status-text");
 // ==========================
 // SOCKET CONNECTION
 // ==========================
-const socket = io("https://webrtc-test.knot.dating", {
+// const socket = io("https://webrtc-test.knot.dating", {
+//   transports: ["websocket", "polling"],
+// });
+
+const socket = io("http://34.120.242.193:3000", {
   transports: ["websocket", "polling"],
 });
 
